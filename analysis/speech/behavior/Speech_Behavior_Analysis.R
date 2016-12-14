@@ -20,6 +20,11 @@ require(signal)
 require(utils)
 require(RColorBrewer)
 require(colorspace)
+require(gtable)
+require(grid)
+require(gridExtra)
+require(cowplot)
+require(ggbiplot)
 
 ################################################
 ## List Generalizers & Date of first gen.
@@ -63,7 +68,7 @@ spfiles <- c("~/Documents/speechData/6924.csv",
 #spfiles <- c("~/Documents/speechData/7012.csv")
 
 # Values we want to keep from the dataframe
-keep_cols <- c("consonant","speaker","vowel","token","correct","gentype","step","session","date","response")
+keep_cols <- c("consonant","speaker","vowel","token","correct","gentype","step","session","date","response","target")
 
 # Size of window to use in timeseries
 winsize <- 300
@@ -77,8 +82,8 @@ basedir <- "/Users/Jonny/Dropbox/Lab Self/inFormants/Analysis/Plots/"
 # Generalization Data Only
 # Loop through files, grab columns that we want, clean data as described within function
 
-load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALSE){
-  gendat <- data.frame(setNames(replicate(11,numeric(0),simplify = F),append(keep_cols,"mouse")))
+load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALSE,tok_remap=FALSE){
+  gendat <- data.frame(setNames(replicate(length(keep_cols)+1,numeric(0),simplify = F),append(keep_cols,"mouse")))
   prog_bar <- txtProgressBar(min=0,max=length(spfiles),width=20,initial=0,style=3)
   i=0
   # Loop through files
@@ -87,7 +92,7 @@ load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALS
     setTxtProgressBar(prog_bar,i)
     
     sp <- read.csv(f)
-    sp.gens <- subset(sp,(step==15) & (!is.na(correct)),select=keep_cols)
+    sp.gens <- subset(sp,(step==15) & (!is.na(correct) & (!is.na(response))),select=keep_cols)
     
     # If we only want the last n sessions, give minsesh as an int. Defaults to False. 
     if (minsesh){
@@ -100,7 +105,7 @@ load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALS
     sp.gens$mouse <- mname
     
     # Fix speaker # for mice that use the new stimmap
-    if ((mname == "7007")|(mname == "7012")){
+    if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
       sp.gens.temp <- sp.gens #Make a copy so we don't run into recursive changes
       sp.gens.temp[sp.gens$speaker == 1,]$speaker <- 5
       sp.gens.temp[sp.gens$speaker == 2,]$speaker <- 4
@@ -176,23 +181,31 @@ load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALS
     try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==4),]$token <- 2,silent = T)
     try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==6 & sp.gens$token==4),]$token <- 2,silent = T)
     
-    # Testing...
-    if ((mname == "7007")|(mname == "7012")){
-      sp.gens.temp <- sp.gens
-      sp.gens.temp[sp.gens$speaker == 5,]$speaker <- 1
-      sp.gens.temp[sp.gens$speaker == 4,]$speaker <- 2
-      sp.gens.temp[sp.gens$speaker == 1,]$speaker <- 3
-      sp.gens.temp[sp.gens$speaker == 2,]$speaker <- 4
-      sp.gens.temp[sp.gens$speaker == 3,]$speaker <- 5
-      sp.gens <- sp.gens.temp
+    # If we want to remap tokens so all ID's are the same (ie. for token analysis), set TRUE
+    # If we want to keep token maps so that learning conditions are the same (ie. for learning analysis), set FALSE
+    if (tok_remap == FALSE){
+      if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
+        sp.gens.temp <- sp.gens
+        sp.gens.temp[sp.gens$speaker == 5,]$speaker <- 1
+        sp.gens.temp[sp.gens$speaker == 4,]$speaker <- 2
+        sp.gens.temp[sp.gens$speaker == 1,]$speaker <- 3
+        sp.gens.temp[sp.gens$speaker == 2,]$speaker <- 4
+        sp.gens.temp[sp.gens$speaker == 3,]$speaker <- 5
+        sp.gens <- sp.gens.temp
+      }
     }
-    
     #prevent overlapping gentypes from before sampling was not mutually exclusive.
     # First knock everything not a 3 to a 2
     try(sp.gens[sp.gens$date<736589 & (sp.gens$vowel==3|sp.gens$vowel==2|sp.gens$vowel==1),]$gentype <- 2,silent = T) 
     # Then specifically define all the 1's.
     try(sp.gens[sp.gens$date<736589 & (sp.gens$speaker==1|sp.gens$speaker==2) & (sp.gens$vowel==1|sp.gens$vowel==2) & (sp.gens$token==1|sp.gens$token==2),]$gentype <- 1,silent = T)
     try(sp.gens[sp.gens$date<736589 & (sp.gens$speaker==1|sp.gens$speaker==2) & sp.gens$vowel==3 & sp.gens$token==1,]$gentype <- 1,silent = T)
+    
+    # Renumber target & response to be 0 and 1 rather than 1 and 3
+    sp.gens[sp.gens$target == 1,]$target <- 0
+    sp.gens[sp.gens$target == 3,]$target <- 1
+    sp.gens[sp.gens$response == 1,]$response <- 0
+    sp.gens[sp.gens$response == 3,]$response <- 1
     
     gendat <- rbind(gendat,sp.gens)
   }
@@ -269,18 +282,57 @@ load_timeseries <- function(spfiles=spfiles,winsize=winsize,ci=FALSE,minsesh=FAL
 
 # Summarize data by....
 gendat.type <- ddply(gendat,.(gentype),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct),nmice=length(unique(mouse)))
-gendat.mouse.type <- ddply(gendat.mouse,.(gentype),summarize, mean_meancx = mean(meancx),cilo = (mean(meancx)-((qt(.975,df=length(unique(mouse))-1))*(sd(meancx)/sqrt(length(unique(mouse)))))),cihi = (mean(meancx)+((qt(.975,df=length(unique(mouse))-1))*(sd(meancx)/sqrt(length(unique(mouse)))))),nobs = sum(nobs),nmice=length(unique(mouse)))
-gendat.mouse <- ddply(gendat,.(mouse,gentype),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+gendat.mouse.type <- ddply(gendat.mouse,.(gentype),summarize, mean_meancx = mean(meancx),meanresp=mean(response),meantarg=mean(target),cilo = (mean(meancx)-((qt(.975,df=length(unique(mouse))-1))*(sd(meancx)/sqrt(length(unique(mouse)))))),cihi = (mean(meancx)+((qt(.975,df=length(unique(mouse))-1))*(sd(meancx)/sqrt(length(unique(mouse)))))),nobs = sum(nobs),nmice=length(unique(mouse)))
+gendat.mouse <- ddply(gendat,.(mouse,gentype),summarize, meancx = mean(correct),meanresp=mean(response),meantarg=mean(target),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+gendat.constype <- ddply(gendat,.(mouse,consonant,gentype),summarize, meancx = mean(correct),meanresp=mean(response),meantarg=mean(target),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+
 gendat.binom <- ddply(gendat,.(mouse,gentype),summarize, meancx = mean(correct),binom = binom.test(sum(correct),length(correct),p=0.5,conf.level=0.95,alternative="greater")[[3]])
 gendat.tokenbinom <- ddply(gendat,.(mouse,vowel,speaker,consonant),summarize, meancx = mean(correct),binom = binom.test(sum(correct),length(correct),p=0.5,conf.level=0.95,alternative="greater")[[3]])
 
-gendat.token <- ddply(gendat,.(vowel,speaker,consonant,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+gendat.token <- ddply(gendat,.(consonant,speaker,vowel,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
 gendat.tokresp <- ddply(gendat,.(vowel,speaker,consonant,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
 
 gendat.token <- ddply(gendat,.(vowel,speaker,consonant,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
-gendat.tokmus <- ddply(gendat,.(mouse,gentype,vowel,speaker,consonant,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+gendat.tokmus <- ddply(gendat,.(mouse,consonant,speaker,vowel),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+gendat.tokmouse <- ddply(gendat,.(mouse,consonant,speaker,vowel,token),summarize, meancx = mean(correct))
+
 gendat.vowel <- ddply(gendat,.(mouse,consonant,vowel),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
-gendat.speaker <- ddply(gendat,.(speaker,consonant,vowel),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+gendat.speaker <- ddply(gendat,.(consonant,speaker,vowel),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+
+gendat.bias <- ddply(gendat,.(mouse),summarize, meancx = mean(correct),meanresp = mean(response),meantarg=mean(target),nobs = length(correct))
+gendat.bias$bias <- gendat.bias$meanresp-gendat.bias$meantarg
+gendat.cons <- ddply(gendat,.(mouse,consonant),summarize, meancx = mean(correct),meanresp = mean(response),meantarg=mean(target),nobs = length(correct))
+gendat.mouse$bias <- gendat.mouse$meanresp-gendat.mouse$meantarg
+gendat.bias["conscx"] <- NA
+gendat.bias["gencx"] <- NA
+gendat.bias["genbias"] <- NA
+gendat.bias["genconscx"] <- NA
+for(m in unique(gendat.cons$mouse)){
+  gendat.bias[gendat.bias$mouse == m,]$conscx <- gendat.cons[(gendat.cons$mouse == m & gendat.cons$consonant == 1),]$meancx - gendat.cons[(gendat.cons$mouse == m & gendat.cons$consonant == 2),]$meancx
+  gendat.bias[gendat.bias$mouse == m,]$gencx <- gendat.mouse[(gendat.mouse$mouse == m & gendat.mouse$gentype == 3),]$meancx
+  gendat.bias[gendat.bias$mouse == m,]$genbias <- gendat.mouse[(gendat.mouse$mouse == m & gendat.mouse$gentype == 3),]$bias
+  gendat.bias[gendat.bias$mouse == m,]$genconscx <- gendat.constype[(gendat.constype$mouse == m & gendat.constype$consonant == 1 & gendat.constype$gentype == 3),]$meancx - gendat.constype[(gendat.constype$mouse == m & gendat.constype$consonant == 2 & gendat.constype$gentype == 3),]$meancx
+}
+gendat.bias$cxdiff <- gendat.bias$gencx - gendat.bias$meancx
+gendat.bias$absbias <- abs(gendat.bias$bias)
+
+# Additional ID columns if needed (eg. for heatmap, tokenplot)
+gendat.token$ID <- as.factor(paste(gendat.token$consonant,gendat.token$vowel,gendat.token$speaker,gendat.token$token))
+gendat.speaker$ID <- as.factor(paste(gendat.speaker$consonant,gendat.speaker$speaker,gendat.speaker$vowel))
+
+gendat.tokmus$ID <- as.factor(paste(gendat.tokmus$speaker,gendat.tokmus$vowel))
+
+# Reshape gendat.mouse for regression plot
+gendat.mouse.rs <- cast(gendat.mouse,mouse~gentype,value="meancx")
+names(gendat.mouse.rs) <- c("mouse","gt1","gt2","gt3")
+
+# Reshape tokmus for clustering/MDS
+gendat.tokmouse$ID <- as.factor(paste(gendat.tokmouse$consonant,gendat.tokmouse$speaker,gendat.tokmouse$vowel,gendat.tokmouse$token))
+tokmouse_cast <- cast(gendat.tokmouse,mouse~ID,value="meancx")
+
+# Save to csv
+write.csv(tokmouse_cast[,-1],file="/Users/Jonny/Documents/tok_cx.csv")
+write.csv(tokmouse_cast[,1],file="/Users/Jonny/Documents/mousenames.csv")
 
 # Adjust timeseries correct value by step
 adjust_ts_step <- function(ts){
@@ -345,6 +397,11 @@ anova(mdem.lm.age,test="Chisq")
 plot_log <- function(xvar,yvar,dat){
 ggplot(dat, aes_string(x=xvar,colour=yvar,fill=yvar),environment = environment()) + geom_density(alpha=0.25)  + stat_smooth(aes_string(y=yvar, colour=NULL, fill=NULL),method="glm", method.args = list(family="binomial"))
 }
+
+# Gen vs. Base regression
+base.gen2<- lm(gt2 ~ gt1,data=gendat.mouse.rs)
+base.gen3 <- lm(gt3 ~ gt1,data=gendat.mouse.rs)
+
   #################################################
 ## Plotting
 
@@ -378,7 +435,7 @@ plot_ts_area <- function(ts){
           legend.title = element_text(size=rel(1.5)),
           legend.key.size = unit("0.25","cm"))
   
-  ggsave(paste(basedir,"ts_area_",as.numeric(as.POSIXct(Sys.time())),".png"),plot=p.area,device="png",width=13.33,height=7.5,units="in",dpi=700,bg="transparent")
+  ggsave(paste(basedir,"ts_area_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=p.area,device="png",width=13.33,height=7.5,units="in",dpi=700,bg="transparent")
   
   return(p.area)
 }
@@ -420,7 +477,7 @@ plot_ts_level <- function(ts){
           legend.position = 'none')
   stepplot
   
-  ggsave(paste(basedir,"ts_step_",as.numeric(as.POSIXct(Sys.time())),".png"),plot=stepplot,device="png",width=9,height=7,units="in",dpi=700)
+  ggsave(paste(basedir,"ts_step_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=stepplot,device="png",width=9,height=7,units="in",dpi=700)
   
 }
 
@@ -485,8 +542,8 @@ gen.barmouse <- ggplot(gendat.mouse,aes(mouse,meancx,fill=as.factor(gentype))) +
 #gen.barmouse
 
 #ggsave("~/Documents/speechPlots/25_27_28_genbarmouse.svg",plot=gen.barmouse,device="svg",width=8,height=4,units="in")
-ggsave(paste(basedir,"genbar_mouse_",as.numeric(as.POSIXct(Sys.time())),".png"),plot=gen.barmouse,device="png",width=9.5,height=6.5,units="in",dpi=700,bg="transparent")
-ggsave(paste(basedir,"genbar_mouse_",as.numeric(as.POSIXct(Sys.time())),".png"),plot=gen.barmouse,device="png",width=1,height=6.5,units="in",dpi=700,bg="transparent")
+ggsave(paste(basedir,"genbar_mouse_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=gen.barmouse,device="png",width=9.5,height=6.5,units="in",dpi=700,bg="transparent")
+ggsave(paste(basedir,"genbar_mouse_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=gen.barmouse,device="png",width=1,height=6.5,units="in",dpi=700,bg="transparent")
 
 
 gendat.mouse.type <- data.frame()
@@ -521,9 +578,211 @@ gen.bar <- ggplot(gendat.mouse.type,aes(gentype,mean_meancx,fill=as.factor(genty
 #gen.bar
 
 #ggsave("~/Documents/speechPlots/25_27_28_genbarmouse.svg",plot=gen.barmouse,device="svg",width=8,height=4,units="in")
-ggsave(paste(basedir,"genbar_all_",as.numeric(as.POSIXct(Sys.time())),".png"),plot=gen.bar,device="png",width=3,height=6.5,units="in",dpi=700,bg="transparent")
+ggsave(paste(basedir,"genbar_all_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=gen.bar,device="png",width=3,height=6.5,units="in",dpi=700,bg="transparent")
+
+scat_cols <- c("GT2_LINE"="#A54601","GT3_LINE"="#196B52")
+# Generalization Type Scatter/Regression plot
+g.genscat_scat <- ggplot(gendat.mouse.rs,aes(x=gt1)) + 
+  geom_point(aes(y=gt2),col="#FF6B02",alpha=0.8,size=2) +
+  geom_smooth(aes(y=gt2,colour="GT2_LINE"),method=lm,se=TRUE,size=0.75) +
+  geom_point(aes(y=gt3),col="#1b9e77",alpha=0.8,size=2) +
+  geom_smooth(aes(y=gt3,colour="GT3_LINE"),method=lm,se=TRUE,size=0.75) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks=c(0.65,0.7,0.75,0.8,0.85),labels=c("65","70","75","80","85")) + 
+  scale_y_continuous(expand = c(0, 0),
+                     breaks=c(0.5,0.55,0.6,0.65,0.7,0.75),labels=c("50","55","60","65","70","75")) + 
+  expand_limits(x=c(0.62,0.86),y=c(0.5,0.75))+
+  ylab("Generalization Accuracy (%)") +
+  xlab("Learned Token Accuracy (%)") +
+  scale_colour_manual(values=scat_cols,labels=c(expression(paste("Type 2 -  ",beta,": 0.52,  ", R^{2},":0.70")),expression(paste("Type 3 -  ",beta,": 0.65,  ", R^{2},":0.58"))))+
+  guides(colour=guide_legend(override.aes=list(size=5)))+
+  theme(panel.background = element_rect(fill="#F5F5F5"), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill="transparent",colour=NA),
+        axis.title.y = element_text(size=rel(1),margin=margin(2,7,2,10,unit="pt")),
+        axis.text.y = element_text(size=rel(1),margin=margin(1,3,1,1,unit="pt")),
+        axis.text.x = element_text(size=rel(1),margin=margin(7,1,1,1,unit="pt")),
+        axis.title.x = element_text(size=rel(1),margin=margin(7,2,10,2,unit="pt")),
+        #axis.ticks.x = element_blank(),
+        #legend.position = c(.5,.85),
+        legend.position = c(.7,.2),
+        legend.text = element_text(size=rel(.8)),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        plot.margin = unit(c(0,0,0,0),"lines"))
+
+g.genscat_boxhorz <- ggplot(gendat.mouse.rs,aes(x=factor(1),y=gt1))+
+  geom_boxplot()+
+  geom_point(size=1) + 
+  scale_y_continuous(expand = c(0, 0)) + 
+  expand_limits(y=c(0.62,0.86))+
+  coord_flip()+
+  theme(panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill="transparent",colour=NA),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        #legend.position = c(.5,.85),
+        legend.position = "none",
+        plot.margin = unit(c(1,0,0,0),"lines"))
+
+g.genscat_boxvert <- ggplot(gendat.mouse.rs,aes(x=factor(1))) +
+  geom_boxplot(aes(y=gt2),col="#A54601") +
+  geom_point(aes(y=gt2),col="#FF6B02",size=1) +
+  geom_boxplot(aes(x=factor(2),y=gt3),col="#196B52") +
+  geom_point(aes(x=factor(2),y=gt3),col="#1b9e77",size=1) +
+  scale_y_continuous(expand = c(0, 0)) + 
+  expand_limits(y=c(0.5,0.75))+
+  theme(panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill="transparent",colour=NA),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        #legend.position = c(.5,.85),
+        legend.position = "none",
+        plot.margin = unit(c(0,0,0,0),"lines"))
+
+# Combine plots, see https://www.r-bloggers.com/scatterplot-with-marginal-boxplots/
+g.genscat_gtabscat <- ggplotGrob(g.genscat_scat)
+g.genscat_gtabhorz <- ggplotGrob(g.genscat_boxhorz)
+g.genscat_gtabvert <- ggplotGrob(g.genscat_boxvert)
+#g.genscat_gtabhorz <- ggplot_gtable(ggplot_build(g.genscat_boxhorz))
+#g.genscat_gtabvert <- ggplot_gtable(ggplot_build(g.genscat_boxvert))
+
+maxW <- unit.pmax(g.genscat_gtabscat$widths[2:3],g.genscat_gtabhorz$widths[2:3])
+maxH <- unit.pmax(g.genscat_gtabscat$heights[4:5],g.genscat_gtabvert$heights[4:5])
+g.genscat_gtabscat$widths[2:3] <- as.list(maxW)
+g.genscat_gtabhorz$widths[2:3] <- as.list(maxW)
+g.genscat_gtabscat$heights[4:5] <- as.list(maxH)
+g.genscat_gtabvert$heights[4:5] <- as.list(maxH)
+
+g.genscat_gtab <- gtable(widths=unit(c(7,1),"null"),height=unit(c(1,7),"null"))
+g.genscat_gtab <- gtable_add_grob(g.genscat_gtab,g.genscat_gtabscat,2,1)
+g.genscat_gtab <- gtable_add_grob(g.genscat_gtab,g.genscat_gtabhorz,1,1)
+g.genscat_gtab <- gtable_add_grob(g.genscat_gtab,g.genscat_gtabvert,2,2)
+
+grid.newpage()
+grid.draw(g.genscat_gtab)
+
+ggsave(paste(basedir,"genscat_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.genscat_gtab,device="png",width=5,height=4,units="in",dpi=700,bg="transparent")
+
+# Generalization type scatter/line combined plot
+g.gensl <- ggplot(gendat.mouse,aes(x=as.factor(gentype),y=meancx,group=as.factor(mouse)))+
+  geom_point(size=1)+
+  geom_line(size=0.3)+
+  xlab("Generalization Type")+
+  ylab("Mean Accuracy (%)")+
+  scale_x_discrete(expand=c(0.1,0.1))+
+  scale_y_continuous(expand=c(0,0),
+                     limits=c(0.5,0.86),
+                     breaks=c(0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85),
+                     labels=c("50","55","60","65","70","75","80","85"))+
+  theme(panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size=rel(1),margin=margin(7,1,1,1,unit="pt")),
+        axis.title.x = element_text(size=rel(1),margin=margin(7,2,10,2,unit="pt")),
+        plot.background = element_rect(fill="transparent",colour=NA),
+        #legend.position = c(.5,.85),
+        legend.position = "none",
+        plot.margin = unit(c(1,0,0,0),"lines"))
+g.gensl
+ggsave(paste(basedir,"gensl_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.gensl,device="png",width=2,height=4,units="in",dpi=700,bg="transparent")
+
+#Combination plot of above two
+g.gensl.gt <- ggplotGrob(g.gensl)
+
+g.combo <- grid.arrange(g.gensl.gt,g.genscat_gtab,widths=c(2,5))
+
+ggsave(paste(basedir,"genscat_combo_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.combo,device="png",width=4,height=2.64,units="in",dpi=700,bg="transparent")
 
 
+g.genscat_gtab <- gtable_add_grob(g.genscat_gtab,g.genscat_gtabvert,2,2)
+
+
+#Simple Timeseries line plot
+g.tsl <- ggplot(ts.dec,aes(x=trialnum,y=rm,colour=mouse))+
+  geom_line()
+g.tsl
+
+# Heatmap
+g.heat <- ggplot(gendat.speaker,aes(x=as.numeric(vowel),y=as.numeric(speaker),fill=as.numeric(meancx))) + 
+  geom_tile() +
+  #scale_fill_gradient(low="#FFFFFF",high="#000000")
+  scale_fill_distiller(palette="Greys")
+g.heat
+
+# Scatterplot of each mouse's performance on each token
+g.tokenplot <- ggplot(gendat.tokmus,aes(x=mouse,y=as.factor(ID),fill=meancx)) + 
+  geom_tile() + 
+  facet_grid(consonant ~ .)
+g.tokenplot
+
+# Bias scatterplot/regression plot
+g.bias <- ggplot(gendat.bias,aes(x=bias,y=conscx)) + 
+  geom_point() +
+  geom_smooth(method=lm,se=FALSE) +
+  geom_point(aes(x=absbias,y=meancx))+
+  geom_smooth(aes(x=absbias,y=meancx),method=lm,se=FALSE)+
+  geom_point(aes(x=abs(genbias),y=gencx),col="red")+
+  geom_smooth(aes(x=abs(genbias),y=gencx),se=FALSE,method=lm,col="red")+
+  #geom_point(aes(x=bias,y=genconscx),col="green") +
+  #geom_smooth(aes(x=bias,y=genconscx),method=lm,se=FALSE,col="green")+
+  geom_point(aes(x=abs(genbias),y=cxdiff),col="green")+
+  geom_smooth(aes(x=abs(genbias),y=cxdiff),method=lm,se=FALSE,col="green")+
+  #geom_point(aes(x=bias,y=genbias),col="green")+
+  #geom_smooth(aes(x=bias,y=genbias),method=lm,col="green")+
+  #geom_point(aes(x=absbias,y=gencx),col="red")+
+  #geom_smooth(aes(x=absbias,y=gencx),method=lm,se=TRUE,col="red")+
+  #geom_point(aes(x=absbias,y=cxdiff),col="green") +
+  #geom_smooth(aes(x=absbias,y=cxdiff),method=lm,se=TRUE,col="green")+
+  ylab("Bias (%responses - %target)") +
+  xlab("% Correct") +
+  theme(panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill="transparent",colour=NA)
+        #axis.title.y = element_text(size=rel(1),margin=margin(2,7,2,10,unit="pt")),
+        #axis.text.y = element_text(size=rel(1),margin=margin(1,3,1,1,unit="pt")),
+        #axis.text.x = element_text(size=rel(1),margin=margin(7,1,1,1,unit="pt")),
+        #axis.title.x = element_text(size=rel(1),margin=margin(7,2,10,2,unit="pt")),
+        #axis.ticks.x = element_blank(),
+        #legend.position = c(.5,.85),
+        #legend.position = c(.7,.2),
+        #legend.text = element_text(size=rel(.8)),
+        #legend.title = element_blank(),
+        #legend.background = element_blank(),
+        #legend.key = element_blank(),
+        #plot.margin = unit(c(0,0,0,0),"lines"))
+  )
+g.bias
+
+# PC on token
+pmc <- prcomp(tokmouse_cast[,-1], center=TRUE,scale=TRUE)
+pmc.x <- as.data.frame(pmc$x)
+g.pc <- ggplot(data=pmc.x,aes(x=PC1,y=PC2,label=tokmouse_cast$mouse))+
+  geom_text()
+g.pc
+
+pmc.melt <- melt(pmc$rotation[,1:2])
+pmc.melt$speaker <- rep(gendat.token$speaker,2)
+pmc.melt$vowel <- rep(gendat.token$vowel,2)
+g.pcw <- ggplot(data=pmc.melt,aes(x=X1,y=value,fill=as.factor(speaker)))+
+  geom_bar(stat='identity')+
+  facet_wrap(~X2)
+g.pcw
 #################
 ## Misc
 
@@ -541,10 +800,12 @@ classifications <- read.csv("~/Documents/tempnpdat/probs.csv",header = FALSE)
 classifications$V1 = classifications$V1-0.5
 classifications$tok <- seq(1,nrow(classifications))
 classifications$type <- c(rep(1,79),rep(2,82))
-classis <- ggplot(classifications, aes(x=tok,y=V1,fill=factor(type))) +
-  geom_bar(stat='identity') +
-  scale_y_continuous(limits = c(-.25,.25))+
-  scale_fill_brewer(palette="Set1") +
+gendat.token$meancx <- gendat.token$meancx-0.5
+gendat.speaker$meancx <- gendat.speaker$meancx-0.5
+classis <- ggplot(gendat.speaker, aes(x=as.factor(ID),y=meancx,fill=factor(speaker))) +
+  geom_bar(stat='identity',position="dodge") +
+  scale_y_continuous(limits = c(-.25,.5))+
+  #scale_fill_brewer(palette="Set1") +
   coord_flip()+ 
   theme(panel.background = element_blank(),
         legend.background = element_rect(fill="transparent",colour=NA),
@@ -562,5 +823,6 @@ classis <- ggplot(classifications, aes(x=tok,y=V1,fill=factor(type))) +
         legend.text = element_text(size=rel(1.2)),
         legend.title = element_text(size=rel(1.5)))
 classis
-ggsave(paste(basedir,"tokclass",as.numeric(as.POSIXct(Sys.time())),".png"),plot=classis,device="png",width=7,height=6.5,units="in",dpi=700,bg="transparent")
+ggsave(paste(basedir,"tokclass",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=classis,device="png",width=7,height=6.5,units="in",dpi=700,bg="transparent")
+
 
