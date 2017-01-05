@@ -51,19 +51,19 @@ table(steplist)
 
 
 ## Speech files
-spfiles <- c("~/Documents/speechData/6924.csv",
-             "~/Documents/speechData/6925.csv",
-             "~/Documents/speechData/6926.csv",
-             "~/Documents/speechData/6927.csv",
-             "~/Documents/speechData/6928.csv",
-             "~/Documents/speechData/6960.csv",
-             "~/Documents/speechData/6964.csv",
-             "~/Documents/speechData/6965.csv",
-             "~/Documents/speechData/6966.csv",
-             "~/Documents/speechData/6967.csv",
-             "~/Documents/speechData/7007.csv",
-             "~/Documents/speechData/7012.csv",
-             "~/Documents/speechData/7058.csv")
+spfiles <- c("~/Documents/fixSpeechData/6924.csv",
+             "~/Documents/fixSpeechData/6925.csv",
+             "~/Documents/fixSpeechData/6926.csv",
+             "~/Documents/fixSpeechData/6927.csv",
+             "~/Documents/fixSpeechData/6928.csv",
+             "~/Documents/fixSpeechData/6960.csv",
+             "~/Documents/fixSpeechData/6964.csv",
+             "~/Documents/fixSpeechData/6965.csv",
+             "~/Documents/fixSpeechData/6966.csv",
+             "~/Documents/fixSpeechData/6967.csv",
+             "~/Documents/fixSpeechData/7007.csv",
+             "~/Documents/fixSpeechData/7012.csv",
+             "~/Documents/fixSpeechData/7058.csv")
 
 #spfiles <- c("~/Documents/speechData/7012.csv")
 
@@ -100,113 +100,21 @@ load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALS
       sp.gens <- subset(sp.gens,session>=this_minsesh,select=keep_cols)
     } 
 
-    # Get mouse name & add to dataframe
-    mname <- substr(f,24,27)
-    sp.gens$mouse <- mname
-    
     # Fix speaker # for mice that use the new stimmap
-    if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
-      sp.gens.temp <- sp.gens #Make a copy so we don't run into recursive changes
-      sp.gens.temp[sp.gens$speaker == 1,]$speaker <- 5
-      sp.gens.temp[sp.gens$speaker == 2,]$speaker <- 4
-      sp.gens.temp[sp.gens$speaker == 3,]$speaker <- 1
-      sp.gens.temp[sp.gens$speaker == 4,]$speaker <- 2
-      sp.gens.temp[sp.gens$speaker == 5,]$speaker <- 3
-      sp.gens <- sp.gens.temp
-    }
-    
-    #### Clean data from excess tokens - refer to "Phonumber Switches.txt"
-    ### First delete pure excess
-    ## Delete >3 tokens
-    # Ira
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==1 & (sp.gens$token==4|sp.gens$token==5|sp.gens$token==7|sp.gens$token==8)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==1 & sp.gens$token==4),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==2 & (sp.gens$token==6|sp.gens$token==7|sp.gens$token==8)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==2 & sp.gens$token==5),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==3 & (sp.gens$token==4|sp.gens$token==5|sp.gens$token==6|sp.gens$token==7|sp.gens$token==8|sp.gens$token==9)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==3 & (sp.gens$token==4|sp.gens$token==5)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==4 & (sp.gens$token==5|sp.gens$token==6|sp.gens$token==7|sp.gens$token==8)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==4 & (sp.gens$token==4|sp.gens$token==5|sp.gens$token==6)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==5 & (sp.gens$token==4|sp.gens$token==5|sp.gens$token==7|sp.gens$token==8)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==5 & sp.gens$token==4),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==6 & (sp.gens$token==6|sp.gens$token==7)),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==6 & sp.gens$token==5),]
-    # Anna
-    sp.gens <- sp.gens[!(sp.gens$speaker==3 & sp.gens$consonant==1 & sp.gens$vowel==1 & sp.gens$token==4),]
-    sp.gens <- sp.gens[!(sp.gens$speaker==3 & sp.gens$consonant==1 & sp.gens$vowel==4 & (sp.gens$token==3|sp.gens$token==4)),] # No 3rd /gae/
-    sp.gens <- sp.gens[!(sp.gens$speaker==3 & sp.gens$consonant==1 & sp.gens$vowel==6 & sp.gens$token==4),]
-    
-    ## Delete discarded/replaced <3 tokens
-    # Ira 
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==1 & sp.gens$token==2),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==2 & (sp.gens$token==1|sp.gens$token==3)),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==2 & sp.gens$token==2),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==3 & sp.gens$token==3),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==2),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==5 & sp.gens$token==3),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==6 & (sp.gens$token==1|sp.gens$token==2)),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==6 & sp.gens$token==1),]
-    # Anna
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==3 & sp.gens$consonant==1 & sp.gens$vowel==3 & sp.gens$token==1),]
-    # Dani
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==4 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==1),]
-    # Theresa
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==1 & sp.gens$token==2),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==2),]
-    sp.gens <- sp.gens[!(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==6 & sp.gens$token==2),]
-    
-    ## Renumber tokens that turned out to be the same token
-    try(sp.gens[(sp.gens$speaker==4 & sp.gens$consonant==1 & (sp.gens$vowel==1|sp.gens$vowel==2|sp.gens$vowel==3|sp.gens$vowel==6) & sp.gens$token==4),]$token <- 3,silent = T)
-    try(sp.gens[(sp.gens$speaker==4 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==5),]$token <- 4,silent = T)
-    try(sp.gens[(sp.gens$speaker==4 & sp.gens$consonant==2 & (sp.gens$vowel==1|sp.gens$vowel==5) & sp.gens$token==4),]$token <- 3,silent = T)
-    
-    ## Then realign data that had its number changed
-    # Ira
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==1 & sp.gens$token==6),]$token <- 2,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==2 & sp.gens$token==4),]$token <- 1,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==2 & sp.gens$token==5),]$token <- 3,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==2 & sp.gens$token==4),]$token <- 2,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==3 & sp.gens$token==10),]$token <- 3,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==4),]$token <- 2,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==5 & sp.gens$token==6),]$token <- 3,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==6 & sp.gens$token==5),]$token <- 1,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==1 & sp.gens$vowel==6 & sp.gens$token==4),]$token <- 2,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==2 & sp.gens$consonant==2 & sp.gens$vowel==6 & sp.gens$token==4),]$token <- 1,silent = T)
-    # Anna
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==3 & sp.gens$consonant==1 & sp.gens$vowel==3 & sp.gens$token==4),]$token <- 1,silent = T)
-    # Dani
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==4 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==4),]$token <- 1,silent = T)
-    # Theresa
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==1 & sp.gens$token==4),]$token <- 2,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==4 & sp.gens$token==4),]$token <- 2,silent = T)
-    try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==6 & sp.gens$token==4),]$token <- 2,silent = T)
-    
     # If we want to remap tokens so all ID's are the same (ie. for token analysis), set TRUE
     # If we want to keep token maps so that learning conditions are the same (ie. for learning analysis), set FALSE
-    if (tok_remap == FALSE){
+    if (tok_remap == TRUE){
       if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
-        sp.gens.temp <- sp.gens
-        sp.gens.temp[sp.gens$speaker == 5,]$speaker <- 1
-        sp.gens.temp[sp.gens$speaker == 4,]$speaker <- 2
-        sp.gens.temp[sp.gens$speaker == 1,]$speaker <- 3
+        sp.gens.temp <- sp.gens #Make a copy so we don't run into recursive changes
+        sp.gens.temp[sp.gens$speaker == 1,]$speaker <- 5
         sp.gens.temp[sp.gens$speaker == 2,]$speaker <- 4
-        sp.gens.temp[sp.gens$speaker == 3,]$speaker <- 5
+        sp.gens.temp[sp.gens$speaker == 3,]$speaker <- 1
+        sp.gens.temp[sp.gens$speaker == 4,]$speaker <- 2
+        sp.gens.temp[sp.gens$speaker == 5,]$speaker <- 3
         sp.gens <- sp.gens.temp
       }
     }
-    #prevent overlapping gentypes from before sampling was not mutually exclusive.
-    # First knock everything not a 3 to a 2
-    try(sp.gens[sp.gens$date<736589 & (sp.gens$vowel==3|sp.gens$vowel==2|sp.gens$vowel==1),]$gentype <- 2,silent = T) 
-    # Then specifically define all the 1's.
-    try(sp.gens[sp.gens$date<736589 & (sp.gens$speaker==1|sp.gens$speaker==2) & (sp.gens$vowel==1|sp.gens$vowel==2) & (sp.gens$token==1|sp.gens$token==2),]$gentype <- 1,silent = T)
-    try(sp.gens[sp.gens$date<736589 & (sp.gens$speaker==1|sp.gens$speaker==2) & sp.gens$vowel==3 & sp.gens$token==1,]$gentype <- 1,silent = T)
-    
-    # Renumber target & response to be 0 and 1 rather than 1 and 3
-    sp.gens[sp.gens$target == 1,]$target <- 0
-    sp.gens[sp.gens$target == 3,]$target <- 1
-    sp.gens[sp.gens$response == 1,]$response <- 0
-    sp.gens[sp.gens$response == 3,]$response <- 1
-    
+
     gendat <- rbind(gendat,sp.gens)
   }
   return(gendat)
@@ -292,7 +200,7 @@ gendat.tokenbinom <- ddply(gendat,.(mouse,vowel,speaker,consonant),summarize, me
 gendat.token <- ddply(gendat,.(consonant,speaker,vowel,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
 gendat.tokresp <- ddply(gendat,.(vowel,speaker,consonant,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
 
-gendat.token <- ddply(gendat,.(vowel,speaker,consonant,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
+#gendat.token <- ddply(gendat,.(vowel,speaker,consonant,token),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
 gendat.tokmus <- ddply(gendat,.(mouse,consonant,speaker,vowel),summarize, meancx = mean(correct),cilo = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[5]],cihi = binom.confint(sum(correct),length(correct),conf.level=0.95,method="exact")[[6]],nobs = length(correct))
 gendat.tokmouse <- ddply(gendat,.(mouse,consonant,speaker,vowel,token),summarize, meancx = mean(correct))
 
@@ -315,6 +223,7 @@ for(m in unique(gendat.cons$mouse)){
 }
 gendat.bias$cxdiff <- gendat.bias$gencx - gendat.bias$meancx
 gendat.bias$absbias <- abs(gendat.bias$bias)
+gendat.bias$absgenbias <- abs(gendat.bias$genbias)
 
 # Additional ID columns if needed (eg. for heatmap, tokenplot)
 gendat.token$ID <- as.factor(paste(gendat.token$consonant,gendat.token$vowel,gendat.token$speaker,gendat.token$token))
@@ -724,11 +633,201 @@ g.heat <- ggplot(gendat.speaker,aes(x=as.numeric(vowel),y=as.numeric(speaker),fi
   scale_fill_distiller(palette="Greys")
 g.heat
 
-# Scatterplot of each mouse's performance on each token
-g.tokenplot <- ggplot(gendat.tokmus,aes(x=mouse,y=as.factor(ID),fill=meancx)) + 
+
+# PC on token
+norm01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+pmc <- prcomp(tokmouse_cast[,-1], center=TRUE,scale=TRUE)
+pmc.x <- as.data.frame(pmc$x)
+pmc.x$mouse <- tokmouse_cast$mouse
+pmc.x$meancx <- (norm01(gendat.bias$meancx)+0.1)*10
+pmc.x$bias <- norm01(gendat.bias$absgenbias)
+g.pc <- ggplot(data=pmc.x,aes(x=PC1,y=PC2,fill=bias))+
+  geom_point(size=pmc.x$meancx,stroke=1,shape=21)+
+  scale_fill_gradient(low="#000000",high="#91CDFF")+
+  theme(
+    legend.position=c(0.75,0.5)
+  )
+g.pc
+ggsave(paste(basedir,"pc_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.pc,device="png",width=5,height=5,units="in",dpi=700,bg="transparent")
+
+
+pmc.melt <- melt(pmc$rotation[,1:2])
+pmc.melt$consonant <- as.factor(rep(gendat.token$consonant,2))
+pmc.melt$speaker <- as.factor(rep(gendat.token$speaker,2))
+pmc.melt$vowel <- as.factor(rep(gendat.token$vowel,2))
+#pmc.melt[,1:5] <- pmc.melt[,c(1,2,4,5,3)]
+#names(pmc.melt) <- c("num","PC","speaker","vowel","val")
+pmc.melt <- ddply(pmc.melt,.(X2,consonant,speaker,vowel),summarise,mean.val = mean(value))
+#pmc.melt <- rev(pmc.melt)
+pmc.melt$ID <- factor(paste(pmc.melt$consonant,pmc.melt$speaker,pmc.melt$vowel),ordered=TRUE)
+
+pmc.melt_g <- pmc.melt[pmc.melt$consonant==1,]
+pmc.melt_g$ID <- factor(paste(pmc.melt_g$consonant,pmc.melt_g$speaker,pmc.melt_g$vowel),ordered=TRUE)
+pmc.melt_b <- pmc.melt[pmc.melt$consonant==2,]
+pmc.melt_b$ID <- factor(paste(pmc.melt_b$consonant,pmc.melt_b$speaker,pmc.melt_b$vowel),ordered=TRUE)
+
+
+g.pcw <- ggplot(data=pmc.melt,aes(x=ID,y=mean.val,fill=as.factor(speaker)))+
+  geom_bar(stat='identity')+
+  coord_flip()+
+  scale_x_discrete(limits=rev(levels(pmc.melt$ID)))+
+  facet_wrap(~X2)+
+  theme(
+    #axis.text=element_blank(),
+    legend.position="none",
+    axis.title = element_blank()
+    #axis.line = element_blank(),
+    #axis.ticks = element_blank()
+  )
+g.pcw
+
+g.pcw_g <- ggplot(data=pmc.melt_g,aes(x=ID,y=mean.val,fill=as.factor(speaker)))+
+  geom_bar(stat='identity')+
+  coord_flip()+
+  scale_x_discrete(limits=rev(levels(pmc.melt_g$ID)))+
+  scale_y_continuous(limits=c(-0.1263236,0.1263236))+
+  facet_wrap(~X2)+
+  theme(
+    axis.text=element_blank(),
+    legend.position="none",
+    axis.title = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank(),
+    strip.text = element_blank(),
+    strip.background = element_blank(),
+    plot.margin = margin(0,0,0,0,unit="npc"),
+    panel.spacing.y = unit(0,"npc")
+  )
+g.pcw_g
+
+g.pcw_b <- ggplot(data=pmc.melt_b,aes(x=ID,y=mean.val,fill=as.factor(speaker)))+
+  geom_bar(stat='identity')+
+  coord_flip()+
+  scale_x_discrete(limits=rev(levels(pmc.melt_b$ID)))+
+  scale_y_continuous(limits=c(-0.1263236,0.1263236))+
+  facet_wrap(~X2)+
+  theme(
+    axis.text=element_blank(),
+    legend.position="none",
+    axis.title = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank(),
+    strip.text = element_blank(),
+    strip.background = element_blank(),
+    plot.margin = margin(0,0,0,0,unit="npc"),
+    panel.spacing.y = unit(0,"npc")
+  )
+g.pcw_b
+
+# Heatmap of each mouse's performance on each token
+gendat.tokmus_g <- gendat.tokmus[gendat.tokmus$consonant==1,]
+gendat.tokmus_b <- gendat.tokmus[gendat.tokmus$consonant==2,]
+
+#Reorder factor so it plots right...
+gendat.tokmus_g$vowel <- factor(gendat.tokmus_g$vowel,ordered=TRUE)
+gendat.tokmus_g$vowel <- factor(gendat.tokmus_g$vowel,levels(gendat.tokmus_g$vowel)[c(6,5,4,3,2,1)])
+gendat.tokmus_b$vowel <- factor(gendat.tokmus_b$vowel,ordered=TRUE)
+gendat.tokmus_b$vowel <- factor(gendat.tokmus_b$vowel,levels(gendat.tokmus_b$vowel)[c(6,5,4,3,2,1)])
+
+g.tok_g <- ggplot(gendat.tokmus_g,aes(x=mouse,y=vowel,fill=meancx)) + 
   geom_tile() + 
-  facet_grid(consonant ~ .)
-g.tokenplot
+  ylab("Vowel") + 
+  scale_y_discrete(labels=c("/u/","/e/","/ae/","/a/","o","/I/")) + # reverse order to make the plot work
+  scale_fill_distiller(type="div",palette="RdGy",limits=c(0,1),
+                       breaks=c(0,0.5,1),labels=c("0%","50%","100%"),
+                       name="Accuracy")+
+  facet_grid(speaker ~ .,scales="free_y",space="free_y") +
+  theme(panel.spacing=unit(-0.008,"npc"),
+        axis.line=element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y=element_text(size=rel(0.5)),
+        legend.position="top",
+        legend.margin=margin(c(0,0.12,-0.017,0.4),unit = "npc"),
+        legend.text = element_text(size=rel(0.5)),
+        legend.title=element_blank(),
+        legend.key.height = unit(0.01,"npc"),
+        strip.text = element_text(size=rel(0.6)),
+        plot.margin = margin(0.04,0,0,0,unit="npc"))
+g.tok_gtab <- ggplotGrob(g.tok_g) # Add consonant panel
+g.tok_gtab <- gtable_add_cols(g.tok_gtab,unit(g.tok_gtab$widths[[5]],'cm'),7)
+g.tok_gtab <- gtable_add_grob(g.tok_gtab,
+                              rectGrob(gp=gpar(col=NA,fill=gray(0.5))),
+                              6,8,16,name="glab")
+g.tok_gtab <- gtable_add_grob(g.tok_gtab,
+                              textGrob("/g/",rot=-90,gp=gpar(col=gray(1))),
+                              6,8,16,name="gtext")
+
+g.tok_b <- ggplot(gendat.tokmus_b,aes(x=mouse,y=vowel,fill=meancx)) + 
+  geom_tile() + 
+  ylab("Vowel") + 
+  scale_y_discrete(labels=c("/u/","/e/","/ae/","/a/","o","/I/")) +
+  scale_fill_distiller(type="div",palette="RdGy",limits=c(0,1))+
+  xlab("Mouse") +
+  facet_grid(speaker ~ .,scales="free_y",space="free_y") +
+  theme(panel.spacing=unit(-0.008,"npc"),
+        axis.line=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_text(size=rel(0.5)),
+        axis.title.x=element_text(size=rel(0.7),margin=margin(0,0,0,0,unit="pt")),
+        legend.position="none",
+        strip.text=element_text(size=rel(0.6)),
+        plot.margin=margin(0,0,0.04,0,unit="npc"))
+g.tok_btab <- ggplotGrob(g.tok_b) # Add consonant panel
+g.tok_btab <- gtable_add_cols(g.tok_btab,unit(g.tok_btab$widths[[5]],'cm'),7)
+g.tok_btab <- gtable_add_grob(g.tok_btab,
+                              rectGrob(gp=gpar(col=NA,fill=gray(0.5))),
+                              4,8,14,name="glab")
+g.tok_btab <- gtable_add_grob(g.tok_btab,
+                              textGrob("/b/",rot=-90,gp=gpar(col=gray(1))),
+                              4,8,14,name="gtext")
+
+grid.newpage()
+g.tokenplot <- grid.arrange(g.tok_gtab,g.tok_btab,ncol=1,heights=c(1,1))
+
+ggsave(paste(basedir,"tok_heatmap_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.tokenplot,device="png",width=3,height=5,units="in",dpi=700,bg="transparent")
+
+# Combine heatmap and PCplots
+g.pcw_gtab <- ggplotGrob(g.pcw_g)
+g.pcw_btab <- ggplotGrob(g.pcw_b)
+
+g.tok_gtab2 <- g.tok_gtab
+g.tok_btab2 <- g.tok_btab
+
+g.tok_gtab2 <- gtable_add_cols(g.tok_gtab2,rep(unit(0.15,"npc"),2),0)
+g.tok_btab2 <- gtable_add_cols(g.tok_btab2,rep(unit(0.15,"npc"),2),0)
+
+g.tok_gtab2 <- gtable_add_grob(g.tok_gtab2,
+                               g.pcw_gtab,
+                               6,1,17,2,name="gtok")
+
+g.tok_btab2 <- gtable_add_grob(g.tok_btab2,
+                               g.pcw_btab,
+                               4,1,15,2,name="gtok")
+
+g.tok_gtab2 <- gtable_add_grob(g.tok_gtab2,
+                               rectGrob(gp=gpar(col=NA,fill=gray(0.5))),
+                               5,1,5,name="pc1box")
+g.tok_gtab2 <- gtable_add_grob(g.tok_gtab2,
+                               rectGrob(gp=gpar(col=NA,fill=gray(0.5))),
+                               5,2,5,name="pc2box")
+g.tok_gtab2 <- gtable_add_grob(g.tok_gtab2,
+                               textGrob("PC1",gp=gpar(col=gray(1))),
+                               5,1,5,name="pc1")
+g.tok_gtab2 <- gtable_add_grob(g.tok_gtab2,
+                               textGrob("PC2",gp=gpar(col=gray(1))),
+                               5,2,5,name="pc2")
+
+grid.newpage()
+g.tokpc_plot <- grid.arrange(g.tok_gtab2,g.tok_btab2,ncol=1)
+
+ggsave(paste(basedir,"tok_heatmap_PC_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.tokpc_plot,device="png",width=4,height=5,units="in",dpi=700,bg="transparent")
+
 
 # Bias scatterplot/regression plot
 g.bias <- ggplot(gendat.bias,aes(x=bias,y=conscx)) + 
@@ -769,20 +868,6 @@ g.bias <- ggplot(gendat.bias,aes(x=bias,y=conscx)) +
   )
 g.bias
 
-# PC on token
-pmc <- prcomp(tokmouse_cast[,-1], center=TRUE,scale=TRUE)
-pmc.x <- as.data.frame(pmc$x)
-g.pc <- ggplot(data=pmc.x,aes(x=PC1,y=PC2,label=tokmouse_cast$mouse))+
-  geom_text()
-g.pc
-
-pmc.melt <- melt(pmc$rotation[,1:2])
-pmc.melt$speaker <- rep(gendat.token$speaker,2)
-pmc.melt$vowel <- rep(gendat.token$vowel,2)
-g.pcw <- ggplot(data=pmc.melt,aes(x=X1,y=value,fill=as.factor(speaker)))+
-  geom_bar(stat='identity')+
-  facet_wrap(~X2)
-g.pcw
 #################
 ## Misc
 
