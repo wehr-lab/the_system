@@ -15,12 +15,12 @@ spfiles <- c("/Users/Jonny/Documents/speechData/6924.csv",
 
 fix_dir = "/Users/Jonny/Documents/fixSpeechData/"
 
-keep_cols <- c("consonant","speaker","vowel","token","correct","gentype","step","session","date","response","target")
+keep_cols <- c("trialNumber","consonant","speaker","vowel","token","correct","gentype","step","session","date","response","target")
 
 
 
 fix_generalization <- function(spfiles=spfiles,keep_cols=keep_cols){
-  gendat <- data.frame(setNames(replicate(length(keep_cols)+1,numeric(0),simplify = F),keep_cols))
+  gendat <- data.frame(setNames(replicate(length(keep_cols),numeric(0),simplify = F),keep_cols))
   prog_bar <- txtProgressBar(min=0,max=length(spfiles),width=20,initial=0,style=3)
   i=0
   # Loop through files
@@ -139,8 +139,48 @@ fix_generalization <- function(spfiles=spfiles,keep_cols=keep_cols){
     
     # Idiosyncratic fixes for each mouse (run on wrong day, data exclusion criteria, etc.)
     if (mname == "7007"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(55:60)),] # Early test trials
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(81,84,87,109)),] # Unexplained drops
+      sp.gens <- sp.gens[!(sp.gens$trialNumber %in% c(35360:35559,39035:39184)),] # Unexplained drop
       sp.gens <- sp.gens[!sp.gens$session==115,] # 52 run on file
+    } else if (mname == "6964"){
+      sp.gens <- sp.gens[!sp.gens$session==114,] # 5 day break and precipitous drop in performance
+      sp.gens <- sp.gens[!sp.gens$session==115,] # Same
+      sp.gens <- sp.gens[!sp.gens$session==103,] # Unexplained drop
+    } else if (mname == "6926"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(61,65,66,67,68,69,70,80)),] # Early test trials (when step 11 was default)
+    } else if (mname == "6924"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(81,82,106,107,108,119,120,124,125)),] # Early test trials
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(165,192)),] # Unexplained drop
+    } else if (mname == "6925"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(68:73,81,87)),] # Early test trials
+      sp.gens <- sp.gens[!(sp.gens$trialNumber %in% 83758:83933),] # Unexplained drop
+    } else if (mname == "6927"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(70:74,85)),] # Early test trials
+      sp.gens <- sp.gens[!(sp.gens$session==111),] # Unexplained drop
+      sp.gens <- sp.gens[!(sp.gens$trialNumber %in% 72704:72804),] # Unexplained drop
+    } else if (mname == "6928"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(65,66,67,68,78,79)),] # Early test trials 
+    } else if (mname == "6960"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(102,103,105,107,108)),] # Early test trials 
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(155,163,180,181,199)),] # Unexplained Drops
+    } else if (mname == "6965"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(73,74)),] # Early test trial
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(133)),] # Unexplained drop
+      sp.gens <- sp.gens[!(sp.gens$trialNumber %in% 56806:56994),] # Unexplained drop
+    } else if (mname == "6966"){
+      sp.gens <- sp.gens[!(sp.gens$trialNumber %in% c(63881:63930,64547:64671,65165:65364,86635:86734)),] # Unexplained drops at beginning of sessions & after breaks
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(146)),] # Drop after week break
+    } else if (mname == "6967"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(122)),] # Drop after week break
+      sp.gens <- sp.gens[!(sp.gens$trialNumber %in% c(67037:67111)),] # Drop after break
+    } else if (mname == "7012"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(104,105)),] # Unexplained drop
+    } else if (mname == "7058"){
+      sp.gens <- sp.gens[!(sp.gens$session %in% c(98)),] # Unexplained drop
     }
+    
+    
     
     
     write.csv(sp.gens,file=paste(fix_dir,mname,'.csv',sep=""))

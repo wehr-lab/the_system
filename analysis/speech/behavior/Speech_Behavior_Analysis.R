@@ -68,7 +68,7 @@ spfiles <- c("~/Documents/fixSpeechData/6924.csv",
 #spfiles <- c("~/Documents/speechData/7012.csv")
 
 # Values we want to keep from the dataframe
-keep_cols <- c("consonant","speaker","vowel","token","correct","gentype","step","session","date","response","target")
+keep_cols <- c("trialNumber","consonant","speaker","vowel","token","correct","gentype","step","session","date","response","target","mouse")
 
 # Size of window to use in timeseries
 winsize <- 300
@@ -83,7 +83,7 @@ basedir <- "/Users/Jonny/Dropbox/Lab Self/inFormants/Analysis/Plots/"
 # Loop through files, grab columns that we want, clean data as described within function
 
 load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALSE,tok_remap=FALSE){
-  gendat <- data.frame(setNames(replicate(length(keep_cols)+1,numeric(0),simplify = F),append(keep_cols,"mouse")))
+  gendat <- data.frame(setNames(replicate(length(keep_cols),numeric(0),simplify = F),keep_cols))
   prog_bar <- txtProgressBar(min=0,max=length(spfiles),width=20,initial=0,style=3)
   i=0
   # Loop through files
@@ -103,6 +103,7 @@ load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALS
     # Fix speaker # for mice that use the new stimmap
     # If we want to remap tokens so all ID's are the same (ie. for token analysis), set TRUE
     # If we want to keep token maps so that learning conditions are the same (ie. for learning analysis), set FALSE
+    mname <- sp.gens[1,]$mouse
     if (tok_remap == TRUE){
       if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
         sp.gens.temp <- sp.gens #Make a copy so we don't run into recursive changes
@@ -135,7 +136,7 @@ load_timeseries <- function(spfiles=spfiles,winsize=winsize,ci=FALSE,minsesh=FAL
   for (f in spfiles){
     
     fin <- read.csv(f)
-    mname <- substr(f,24,27)
+    mname <- fin[1,]$mouse
     
     #Filter Data
     fin <- fin[(fin$step<=15 & fin$step>=5),]
@@ -615,7 +616,7 @@ g.gensl.gt <- ggplotGrob(g.gensl)
 
 g.combo <- grid.arrange(g.gensl.gt,g.genscat_gtab,widths=c(2,5))
 
-ggsave(paste(basedir,"genscat_combo_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.combo,device="png",width=4,height=2.64,units="in",dpi=700,bg="transparent")
+ggsave(paste(basedir,"genscat_combo_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.combo,device="png",width=8,height=5.28,units="in",dpi=700,bg="transparent")
 
 
 g.genscat_gtab <- gtable_add_grob(g.genscat_gtab,g.genscat_gtabvert,2,2)
@@ -721,6 +722,7 @@ g.pcw_b <- ggplot(data=pmc.melt_b,aes(x=ID,y=mean.val,fill=as.factor(speaker)))+
 g.pcw_b
 
 # Heatmap of each mouse's performance on each token
+gendat.tokmus$mouse <- as.factor(gendat.tokmus$mouse)
 gendat.tokmus_g <- gendat.tokmus[gendat.tokmus$consonant==1,]
 gendat.tokmus_b <- gendat.tokmus[gendat.tokmus$consonant==2,]
 
