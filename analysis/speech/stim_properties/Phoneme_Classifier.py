@@ -10,16 +10,18 @@ from scipy.io import wavfile
 import pandas
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+from librosa.feature import melspectrogram
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
-import matplotlib.pyplot as plt
 from sklearn import metrics
-from treeinterpreter import treeinterpreter as ti
 from sklearn import preprocessing
-from librosa.feature import melspectrogram
-from hmmlearn import hmm
+from sklearn.model_selection import train_test_split
 
-from sklearn.datasets import load_boston
+from treeinterpreter import treeinterpreter as ti
+
+
 
 ###########################
 # Declare Parameters
@@ -36,117 +38,31 @@ MFCC_PARAMS = {
     "appendEnergy" : False
 }
 
+MEL_PARAMS = {
+    "n_fft"      : 480,
+    "hop_length" : 240,
+    "n_mels"     : 20,
+    "fmin"       : 1000
+}
 
-names = ['Jonny','Ira','Anna','Dani','Theresa']
-cons = ['g','b']
-vows = ['I','o','a','ae','e','u']
+PHOVECT_COLS = ['consonant','speaker','vowel','token']
+NAMES = ['Jonny','Ira','Anna','Dani','Theresa']
+CONS = ['g','b']
+VOWS = ['I','o','a','ae','e','u']
 #phoneme_dir = '/home/lab/github/SVN-ComboPack/ratrixSounds/phonemes/'
-phoneme_dir = '/Users/Jonny/Github/SVN-ComboPack/ratrixSounds/phonemes/'
+PHONEME_DIR = '/Users/Jonny/Github/SVN-ComboPack/ratrixSounds/phonemes/'
 
-mapback = {'g':1,'b':2,
+MAPBACK = {'g':1,'b':2,
            'Jonny':1,'Ira':2,'Anna':3,'Dani':4,'Theresa':5,
            'I':1,'o':2,'a':3,'ae':4,'e':5,'u':6}
 
-data_dir = '/Users/Jonny/Documents/fixSpeechData/'
+DATA_DIR = '/Users/Jonny/Documents/fixSpeechData/'
+
+PROP_TRAIN = 0.8 # Proportion of data to use as training data
 
 
 
 ###########################
-
-# Declare scalar token number from phovect [consonant,speaker, vowel,token]
-# Using stimmap 1 {Jonny, Ira, Anna, Dani, Theresa}
-
-
-file_iterator = itertools.product(cons,names,vows,range(1,4))
-counter = itertools.count()
-phovect_idx = dict()
-phovect_xdi = dict()
-file_idx = dict()
-file_loc = dict()
-while True:
-    try:
-        file_components = file_iterator.next()
-        if ((file_components[1] == 'Jonny') & any(vow for vow in file_components[2] if vow in ['ae','e','u'])) or (file_components[0] == 'g' and file_components[1] == 'Anna' and file_components[2] is "ae" and file_components[3] == 3 ):
-            pass
-        else:
-            thisnum = counter.next()
-            pho = file_components[0] + file_components[2]
-            phovect_tup = (mapback[file_components[0]],mapback[file_components[1]],mapback[file_components[2]],file_components[3])
-            phovect_idx[thisnum] = phovect_tup
-            phovect_xdi[phovect_tup] = thisnum
-            file_idx[thisnum] = file_components
-            file_loc[thisnum] = phoneme_dir + file_components[1] + '/CV/' + pho + '/' + pho + str(file_components[3]) + '.wav'
-    except StopIteration:
-        break
-
-# Load audio files & decompose into MFCC's
-phonemes = dict()
-mfccs = dict()
-mfccs_np = np.ndarray((len(file_loc),2600))
-for i, loc in file_loc.items():
-    fs, phonemes[i] = wavfile.read(loc)
-    an_mfcc = mfcc(phonemes[i],fs,**MFCC_PARAMS)
-    mfccs[i] = an_mfcc
-    mfccs_np[i,0:an_mfcc.shape[0]*an_mfcc.shape[1]] = an_mfcc.reshape(-1)
-
-# Or just mel spectrum
-phonemes = dict()
-mfccs = dict()
-mfccs_np = np.ndarray((len(file_loc),4020))
-for i, loc in file_loc.items():
-    fs, phonemes[i] = wavfile.read(loc)
-    an_mfcc = melspectrogram(phonemes[i],sr=fs,n_fft=480,hop_length=240,n_mels=20,fmin=1000)
-    mfccs[i] = an_mfcc
-    mfccs_np[i,0:an_mfcc.shape[0]*an_mfcc.shape[1]] = an_mfcc.reshape(-1)
-
-
-# Load behavior data & get ndarray with pho vect, correct answer & mouse's answer
-# Behavior data should be as hdf5, and should have already been cleaned for generalization (eg. fixDirtyGens)
-data_files = [f for f in os.listdir(data_dir) if f.endswith('.h5')]
-
-data_arrays = dict()
-vect_arrays = dict()
-response_arrays = dict()
-mfcc_arrays = dict()
-
-#for f in data_files: # For now just one mouse at a time thx
-f = data_files[4]
-h5f = pandas.HDFStore(data_dir + f, mode="r")['table']
-phovect_cols = ['consonant','speaker','vowel','token']
-h5f.phovect = h5f[phovect_cols]
-mfcc_trials = np.ndarray((h5f.phovect.__len__(),20,201))
-for i in range(0,h5f.phovect.__len__()):
-    phovect = tuple(h5f.phovect.iloc[i])
-    this_mfcc = mfccs[phovect_xdi[phovect]]
-    # test = np.split(this_mfcc, this_mfcc.shape[1], axis=1) # Make 2d array a list of vectors
-    mfcc_trials[i, 0:this_mfcc.shape[0],0:this_mfcc.shape[1]] = this_mfcc
-
-#test = np.array(this_mfcc[0])
-#for i in this_mfcc:
-
-
-# Get responses
-responses = h5f['response']
-
-# Take out any nans & convert responses to 0 and 1
-response_nans = np.isnan(responses)
-keep_trials = response_nans[response_nans==False].index
-responses = responses[keep_trials]
-mfcc_trials = mfcc_trials[keep_trials,:,:]
-responses[responses==1] = 0
-responses[responses==3] = 1
-
-# Reshape & Rescale
-mfss_rs = mfcc_trials.reshape(len(responses), -1)
-mfss_rs = preprocessing.scale(mfss_rs.astype(float))
-mfss_rs_ind = preprocessing.scale(mfccs_np.astype(float))
-
-# Split into training & test sets
-split =  np.round(mfss_rs.shape[0]*.80).astype(int)
-mfss_train = mfss_rs[0:split,:]
-responses_train = responses[0:split]
-mfss_test = mfss_rs[split+1:,:]
-responses_test = responses[split+1:]
 
 
 # Get sklernin on some trees

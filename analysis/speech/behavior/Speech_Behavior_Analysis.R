@@ -396,7 +396,7 @@ plot_ts_level <- function(ts){
 #plot bars split by mouse
 limits <- aes(ymax=cihi,ymin=cilo)
 dodge <- position_dodge(width=.9)
-gen.barmouse <- ggplot(gendat.mouse,aes(mouse,meancx,fill=as.factor(gentype))) + 
+gen.barmouse <- ggplot(gendat.mouse,aes(as.factor(mouse),meancx,fill=as.factor(gentype))) + 
   geom_bar(position="dodge",stat="identity") +
   geom_errorbar(limits,position=dodge,width=0.25,size=0.4,color="white") + 
   scale_y_continuous(limits = c(.4,.95),breaks=c(.4,.5,.6,.7,.8,.9),labels=c("40%","50%","60%","70%","80%","90%"),oob = rescale_none) +
@@ -412,23 +412,23 @@ gen.barmouse <- ggplot(gendat.mouse,aes(mouse,meancx,fill=as.factor(gentype))) +
         axis.title.y = element_blank(),
         axis.text.y = element_text(size=rel(1.5),color="white"),
         axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
+        #axis.text.y = element_blank(),
         axis.title.x = element_text(size=rel(1.5),color="white"),        
         axis.text.x = element_text(size=rel(1.5),color="white"),
         #legend.position = c(.4,.85),
         legend.position = "none",
         legend.text = element_text(size=rel(1.2)),
         legend.title = element_text(size=rel(1.5)))
-#gen.barmouse
+gen.barmouse
 gendat.mouse <- data.frame(1)
 gendat.mouse$mouse <- 'Classifier'
 gendat.mouse$gentype <- 1
 gendat.mouse$meancx <- .78
 gendat.mouse <- gen.barmouse[1]
 
-gen.barmouse <- ggplot(gendat.mouse,aes(mouse,meancx,fill=as.factor(gentype))) + 
+gen.barmouse <- ggplot(gendat.mouse,aes(x=as.factor(mouse),y=meancx,fill=as.factor(gentype))) + 
   geom_bar(position="dodge",stat="identity") +
-  #geom_errorbar(limits,position=dodge,width=0.25,size=0.4,color="white") + 
+  geom_errorbar(limits,position="dodge",width=0.25,size=0.4,color="white") + 
   scale_y_continuous(limits = c(.4,.95),breaks=c(.4,.5,.6,.7,.8,.9),labels=c("40%","50%","60%","70%","80%","90%"),oob = rescale_none) +
   scale_fill_brewer(palette="Set1",name="Generalization Type",labels=c("Learned","Learned Vowels, Unlearned Speakers & Tokens","Unlearned Vowels, Speakers, Tokens"))+
   #scale_fill_discrete(name="Generalization Type",labels=c("Learned","Learned Vowels, Unlearned Speakers & Tokens","Unlearned Vowels, Speakers, Tokens"))+
@@ -449,7 +449,7 @@ gen.barmouse <- ggplot(gendat.mouse,aes(mouse,meancx,fill=as.factor(gentype))) +
         legend.position = "none",
         legend.text = element_text(size=rel(1.2)),
         legend.title = element_text(size=rel(1.5)))
-#gen.barmouse
+gen.barmouse
 
 #ggsave("~/Documents/speechPlots/25_27_28_genbarmouse.svg",plot=gen.barmouse,device="svg",width=8,height=4,units="in")
 ggsave(paste(basedir,"genbar_mouse_",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=gen.barmouse,device="png",width=9.5,height=6.5,units="in",dpi=700,bg="transparent")
@@ -638,7 +638,7 @@ g.heat
 # PC on token
 norm01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
-pmc <- prcomp(tokmouse_cast[,-1], center=TRUE,scale=TRUE)
+pmc <- prcomp(gendat.tokmouse_cast[,-1], center=TRUE,scale=TRUE)
 pmc.x <- as.data.frame(pmc$x)
 pmc.x$mouse <- tokmouse_cast$mouse
 pmc.x$meancx <- (norm01(gendat.bias$meancx)+0.1)*10

@@ -60,8 +60,8 @@ g.appear
 ggsave(paste(basedir,"ts_appear",as.numeric(as.POSIXct(Sys.time())),".png",sep=""),plot=g.appear,device="png",width=5,height=2.5,units="in",dpi=700,bg="transparent")
 
 
-gd.ts.byappear.lm1 <- lm(meancx~log(nappear)*as.factor(gentype),data=gd.ts.byappear)
-summary(gd.ts.byappear.lm1)
+gd.ts.lm1 <- lm(meancx~log(nappear)*as.factor(gentype),data=gendat.ts)
+summary(gd.ts.lm1)
 
 # By mouse
 gd.ts.bymouse <- gd.ts[(gd.ts$nappear<=50) & (gd.ts$gentype == 2 | gd.ts$gentype == 3),]
