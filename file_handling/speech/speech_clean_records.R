@@ -10,7 +10,8 @@ spfiles <- c("/Users/Jonny/Documents/speechData/6924.csv",
              "/Users/Jonny/Documents/speechData/6967.csv",
              "/Users/Jonny/Documents/speechData/7007.csv",
              "/Users/Jonny/Documents/speechData/7012.csv",
-             "/Users/Jonny/Documents/speechData/7058.csv")
+             "/Users/Jonny/Documents/speechData/7058.csv",
+             "/Users/Jonny/Documents/speechData/7120.csv")
 
 
 fix_dir = "/Users/Jonny/Documents/fixSpeechData/"
@@ -37,7 +38,7 @@ fix_generalization <- function(spfiles=spfiles,keep_cols=keep_cols){
     sp.gens$mouse <- mname
     
     # Fix speaker # for mice that use the new stimmap
-    if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
+    if ((mname == "7007")|(mname == "7012")|(mname == "7058")|(mname == "7120")){
       sp.gens.temp <- sp.gens #Make a copy so we don't run into recursive changes
       sp.gens.temp[(sp.gens$speaker == 1) & (sp.gens$step >= 5),]$speaker <- 5
       sp.gens.temp[(sp.gens$speaker == 2) & (sp.gens$step >= 5),]$speaker <- 4
@@ -114,7 +115,7 @@ fix_generalization <- function(spfiles=spfiles,keep_cols=keep_cols){
     try(sp.gens[(sp.gens$date<736589 & sp.gens$speaker==5 & sp.gens$consonant==1 & sp.gens$vowel==6 & sp.gens$token==4),]$token <- 2,silent = T)
     
     # Return speaker ID to original mapping
-    if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
+    if ((mname == "7007")|(mname == "7012")|(mname == "7058")|(mname == "7120")){
       sp.gens.temp <- sp.gens
       sp.gens.temp[(sp.gens$speaker == 5) & (sp.gens$step >= 5),]$speaker <- 1
       sp.gens.temp[(sp.gens$speaker == 4) & (sp.gens$step >= 5),]$speaker <- 2
