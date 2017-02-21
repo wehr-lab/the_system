@@ -22,7 +22,7 @@ load_generalization <- function(spfiles=spfiles,keep_cols=keep_cols,minsesh=FALS
     # If we want to keep token maps so that learning conditions are the same (ie. for learning analysis), set FALSE
     mname <- sp.gens[1,]$mouse
     if (tok_remap == TRUE){
-      if ((mname == "7007")|(mname == "7012")|(mname == "7058")){
+      if ((mname == "7007")|(mname == "7012")|(mname == "7058")|(mname == "7118")|(mname == "7120")){
         sp.gens.temp <- sp.gens #Make a copy so we don't run into recursive changes
         sp.gens.temp[sp.gens$speaker == 1,]$speaker <- 5
         sp.gens.temp[sp.gens$speaker == 2,]$speaker <- 4

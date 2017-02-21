@@ -72,7 +72,7 @@ LOAD_PARAMS = {
 
 
 DATA_DIR       = '/Users/Jonny/Documents/fixSpeechData/'
-N_CONV_FILTERS = 128
+N_CONV_FILTERS = 256
 LEARN_RATE     = 0.0001
 L2_WEIGHT      = 0.0001
 OPTIMIZER_TYPE = "nadam" # nadam, adam, or rmsprop
@@ -81,7 +81,7 @@ NET_TYPE       = LOAD_PARAMS["net_type"]
 
 ##########################################
 # Load data for 1 mouse
-f = '/Users/Jonny/Documents/fixSpeechData/6928.h5'
+f = '/Users/Jonny/Documents/fixSpeechData/6965.h5'
 
 phovect_idx, phovect_xdi, file_idx, file_loc = (
     make_phoneme_iterators(NAMES, CONS, VOWS, MAPBACK, PHONEME_DIR)
@@ -158,7 +158,7 @@ if not loaded:
     model.add(Dropout(0.1))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    model.add(Convolution2D(N_CONV_FILTERS * 2, 3, 3,
+    model.add(Convolution2D(N_CONV_FILTERS, 3, 3,
                             init='glorot_normal',
                             border_mode='same',
                             dim_ordering='th',
@@ -166,7 +166,7 @@ if not loaded:
                             #activity_regularizer=activity_l2(L2_WEIGHT),
                             W_regularizer=l2(L2_WEIGHT)))
     model.add(Dropout(0.1))
-    model.add(Convolution2D(N_CONV_FILTERS * 2, 3, 3,
+    model.add(Convolution2D(N_CONV_FILTERS, 3, 3,
                             init='glorot_normal',
                             border_mode='same',
                             W_regularizer=l2(L2_WEIGHT),
@@ -176,20 +176,21 @@ if not loaded:
     model.add(Dropout(0.1))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    model.add(Convolution2D(N_CONV_FILTERS * 4, 3, 3,
+    model.add(Convolution2D(N_CONV_FILTERS * 2, 3, 3,
                             init='glorot_normal',
                             border_mode='same',
                             W_regularizer=l2(L2_WEIGHT),
                             activation='relu',
                             dim_ordering='th'))
     model.add(Dropout(0.1))
-    model.add(Convolution2D(N_CONV_FILTERS * 4, 3, 3,
+    model.add(Convolution2D(N_CONV_FILTERS * 2, 3, 3,
                             init='glorot_normal',
                             border_mode='same',
                             W_regularizer=l2(L2_WEIGHT),
                             activation='relu',
                             dim_ordering='th'))
     model.add(Dropout(0.1))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Flatten())
 #   model.add(Dense(N_CONV_FILTERS*2,
 #                   activation='tanh',
@@ -198,21 +199,23 @@ if not loaded:
 #   model.add(Dropout(0.3))
 
 if NET_TYPE == "regression":
-    model.add(Dense(1, activation='linear'))
-    model.add(Dropout(0.2))
-    model.compile(loss='mean_squared_error',
-                  optimizer=optimizer,
-                  metrics=['mean_absolute_error'])
+    if not loaded:
+        model.add(Dense(1, activation='linear'))
+        model.add(Dropout(0.2))
+        model.compile(loss='mean_squared_error',
+                      optimizer=optimizer,
+                      metrics=['mean_absolute_error'])
     for i in range(100):
         model.fit(X_train, y_train, batch_size=1, nb_epoch=5)
         model_str = '/Users/Jonny/Documents/Speech_Models/conv_reg_{}_N{}'.format(strftime("%m%d%H%M", gmtime()),N_CONV_FILTERS)
         model.save(model_str)
 
 elif NET_TYPE == "trials":
-    model.add(Dense(2, activation='softmax'))
-    model.compile(loss='binary_crossentropy',
-                  optimizer=optimizer,
-                  metrics=['accuracy'])
+    if not loaded:
+        model.add(Dense(2, activation='softmax'))
+        model.compile(loss='binary_crossentropy',
+                      optimizer=optimizer,
+                      metrics=['accuracy'])
     for i in range(100):
         model.fit(X_train, y_train, batch_size=128, nb_epoch=5)
         model_str = '/Users/Jonny/Documents/Speech_Models/conv_trials_{}_N{}'.format(strftime("%m%d%H%M", gmtime()),N_CONV_FILTERS)

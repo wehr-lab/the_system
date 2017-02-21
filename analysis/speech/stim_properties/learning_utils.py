@@ -3,7 +3,7 @@
 from python_speech_features import mfcc
 import itertools
 from scipy.io import wavfile
-from scipy.signal import spectrogram
+from scipy.signal import spectrogram, decimate
 import pandas
 import numpy as np
 from librosa.feature import melspectrogram
@@ -80,6 +80,103 @@ def spectrogram_from_files(file_loc, SPECT_PARAMS):
         f, t, a_spec = spectrogram(phonemes[i], fs=fs, **SPECT_PARAMS)
         specs[i] = a_spec
     return f, t, specs
+
+def spectrogram_for_training(file_loc, SPECT_PARAMS, phovect_idx):
+    phonemes = dict()
+    specs = dict()
+    constype  = np.zeros((len(phovect_idx),2),dtype=np.float)
+    vowtype   = np.zeros((len(phovect_idx),6),dtype=np.float)
+    speaktype = np.zeros((len(phovect_idx),5),dtype=np.float)
+    maxlen = 0
+    for i, loc in file_loc.items():
+        fs, phoneme = wavfile.read(loc)
+        a_spec = melspectrogram(phoneme, sr=fs, **SPECT_PARAMS)
+        specs[i] = a_spec
+
+        constype[i,phovect_idx[i][0]-1] = 1.
+        speaktype[i,phovect_idx[i][1]-1] = 1.
+        vowtype[i,phovect_idx[i][2]-1] = 1.
+
+    specs_np = np.zeros((len(specs),specs[0].shape[0],specs[0].shape[1],1),dtype=np.float)
+    for i, spec in specs.items():
+            specs_np[i,:,:,0] = spec
+
+    randind = np.random.permutation(specs_np.shape[0])
+    specs_np = specs_np[randind,:,:,:]
+    constype = constype[randind,:]
+    speaktype = speaktype[randind,:]
+    vowtype = vowtype[randind,:]
+
+
+    return specs_np,constype,speaktype,vowtype
+
+def audio_from_files(file_loc,phovect_idx,n_jitter=1,jitter_range=.1):
+
+    phonemes = dict()
+    constype  = np.zeros((len(phovect_idx),2),dtype=np.float)
+    vowtype   = np.zeros((len(phovect_idx),6),dtype=np.float)
+    speaktype = np.zeros((len(phovect_idx),5),dtype=np.float)
+    maxlen = 0
+    for i, loc in file_loc.items():
+        fs, sig = wavfile.read(loc)
+        # phonemes[i] = decimate(sig,2,ftype="fir",zero_phase=True)
+        phonemes[i] = sig
+
+        # If /b/, col 0 True, if /g/, etc.
+        constype[i,phovect_idx[i][0]-1] = 1.
+        speaktype[i,phovect_idx[i][1]-1] = 1.
+        vowtype[i,phovect_idx[i][2]-1] = 1.
+
+        # Find the longest file if they're of different lengths
+        if len(phonemes[i]) > maxlen:
+            maxlen = len(phonemes[i])
+
+    # Make numpy array of sounds, and if requested, randomly jitter start time
+    if n_jitter == 1:
+        phonemes_np = np.zeros((len(phonemes),maxlen),dtype=np.int16)
+        for i, phone in phonemes.items():
+            phonemes_np[i,range(len(phone))] = phone
+    else:
+        jitmax = np.int(np.round(jitter_range * fs))
+        phonemes_np  = np.zeros((len(phonemes) * n_jitter,
+                                maxlen + jitmax),
+                                dtype = np.int16)
+        constype_np  = np.zeros((len(phonemes) * n_jitter, 2),
+                                dtype = np.float)
+        vowtype_np   = np.zeros((len(phonemes) * n_jitter, 6),
+                                dtype=np.float)
+        speaktype_np = np.zeros((len(phonemes) * n_jitter, 5),
+                                dtype=np.float)
+
+        for i, phone in phonemes.items():
+            for j in range(n_jitter):
+                thisind = np.int(i*n_jitter + j)
+                jitby = np.int(np.random.randint(0,jitmax))
+                phonemes_np[thisind,range(jitby,jitby+len(phone))] = phone
+                constype_np[thisind,phovect_idx[i][0]-1] = 1.
+                speaktype_np[thisind,phovect_idx[i][1]-1] = 1.
+                vowtype_np[thisind,phovect_idx[i][2]-1] = 1.
+
+        # rename constype so we don't have multiple return conditions
+        constype  = constype_np
+        speaktype = speaktype_np
+        vowtype   = vowtype_np
+
+
+    # Randomize Order
+    randind = np.random.permutation(phonemes_np.shape[0])
+    phonemes_np = phonemes_np[randind,:]
+    constype = constype[randind,:]
+    speaktype = speaktype[randind,:]
+    vowtype = vowtype[randind,:]
+
+    # Add singleton dim to fit keras
+    phonemes_np = phonemes_np.reshape(len(phonemes_np),phonemes_np.shape[1],1)
+
+    return phonemes_np,constype,speaktype,vowtype
+
+
+
 
 # Declare scalar token number from phovect [consonant,speaker, vowel,token]
 # Using stimmap 1 {Jonny, Ira, Anna, Dani, Theresa}
@@ -219,3 +316,4 @@ def load_mouse(f,col_select,specs,phovect_xdi,phovect_idx,path=None,scale=True,p
         X_test = X_test[:,:,:,:-1]
 
     return X_train,y_train,X_test,y_test,weights
+
