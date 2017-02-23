@@ -5,7 +5,7 @@ import getopt
 from time import strftime, gmtime
 
 from keras.models import Sequential
-from keras.layers import Dense, Convolution2D, Flatten, MaxPooling2D, Dropout, PReLU, Input
+from keras.layers import Dense, Convolution2D, Flatten, MaxPooling2D, Dropout, PReLU, Input, merge
 from keras.optimizers import RMSprop, Adam, Nadam
 from keras.regularizers import l2
 from keras.models import load_model, Model
@@ -62,10 +62,10 @@ LOAD_PARAMS = {
 
 
 DATA_DIR       = '/Users/Jonny/Documents/fixSpeechData/'
-N_CONV_FILTERS = 100
+N_CONV_FILTERS = 128
 FILT_LEN       = 3
 LEARN_RATE     = 0.0001
-L2_WEIGHT      = 0.0000001
+L2_WEIGHT      = 0.0001
 OPTIMIZER_TYPE = "adam" # nadam, adam, or rmsprop
 NET_TYPE       = LOAD_PARAMS["net_type"]
 
@@ -136,7 +136,7 @@ if not loaded:
                             W_regularizer=l2(L2_WEIGHT))(l_pool_1)
     l_drop_2_1 = Dropout(0.5)(l_conv_2_1)
     l_pool_2   = MaxPooling2D(pool_size=(2,2))(l_drop_2_1)
-    l_conv_2_2 = Convolution2D(N_CONV_FILTERS*2, FILT_LEN, FILT_LEN,
+    l_conv_2_2 = Convolution2D(N_CONV_FILTERS*4, FILT_LEN, FILT_LEN,
                             init='he_normal',
                             border_mode='same',
                             activation='relu',
@@ -178,40 +178,47 @@ if not loaded:
     # OUTPUTS
     l_flat     = Flatten()(l_pool_3)
 
-    l_dense     = Dense(N_CONV_FILTERS*2,activation="relu",
+    #l_dense     = Dense(N_CONV_FILTERS*2,activation="relu",
+    #                    init="he_normal",
+    #                    W_regularizer=l2(L2_WEIGHT))(l_flat)
+    #l_drop = Dropout(0.5)(l_dense)
+
+    l_out_speak = Dense(5,activation='softmax',
                         init="he_normal",
+                        name="speak",
                         W_regularizer=l2(L2_WEIGHT))(l_flat)
-    l_drop = Dropout(0.5)(l_dense)
+    l_out_vow   = Dense(6,activation='softmax',
+                        init="he_normal",
+                        name="vow",
+                        W_regularizer=l2(L2_WEIGHT))(l_flat)
+
+    l_merge     = merge([l_flat,l_out_speak,l_out_vow],mode='concat',concat_axis=1)
+    l_dense_2   = Dense(N_CONV_FILTERS*2,activation="relu",
+                        init="he_normal",
+                        W_regularizer=l2(L2_WEIGHT))(l_merge)
+    l_drop_2    = Dropout(0.5)(l_dense_2)
     l_out_cons  = Dense(2,activation='softmax',
                         init="he_normal",
                         name="cons",
-                        W_regularizer=l2(L2_WEIGHT))(l_drop)
-    # l_out_speak = Dense(5,activation='softmax',
-    #                     init="he_normal",
-    #                     name="speak",
-    #                     W_regularizer=l2(L2_WEIGHT))(l_flat)
-    # l_out_vow   = Dense(6,activation='softmax',
-    #                     init="he_normal",
-    #                     name="vow",
-    #                     W_regularizer=l2(L2_WEIGHT))(l_flat)
+                        W_regularizer=l2(L2_WEIGHT))(l_drop_2)
 
     # COMPILE MODEL
     model = Model(input=[l_input],
-                  #output=[l_out_cons,l_out_speak,l_out_vow])
-                  output=[l_out_cons])
+                  output=[l_out_cons,l_out_speak,l_out_vow])
+                  #output=[l_out_cons])
     model.compile(optimizer=optimizer,
-                  # loss=['binary_crossentropy',
-                  #       'categorical_crossentropy',
-                  #       'categorical_crossentropy'],
-                  #loss_weights=[1., 0.5, 0.5]
-                  loss='binary_crossentropy',
+                  loss=['binary_crossentropy',
+                        'categorical_crossentropy',
+                        'categorical_crossentropy'],
+                  loss_weights=[1., 0.3, 0.3],
+                  #loss='binary_crossentropy',
                   metrics=['accuracy']
                   )
 
     for i in range(100):
         X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx)
-        #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=2, nb_epoch=1)
-        model.fit(X_train, cons_train, batch_size=10, nb_epoch=1)
+        model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
+        #model.fit(X_train, cons_train, batch_size=10, nb_epoch=1)
         model_str = '/Users/Jonny/Documents/Speech_Models/raw_multi_conv_{}_N{}'.format(strftime("%m%d%H%M", gmtime()),N_CONV_FILTERS)
         model.save(model_str)
 

@@ -90,7 +90,6 @@ gendat <- load_generalization(spfiles=spfiles,keep_cols=keep_cols)
 gendat.rm <- load_generalization(spfiles=spfiles,keep_cols=keep_cols,tok_remap = TRUE)
 ts <- load_timeseries(spfiles=spfiles,winsize=300)
 
-ts <- load_timeseries(spfiles="~/Documents/fixSpeechData/6926.csv",winsize=300)
 
 
 #################################################
@@ -333,6 +332,8 @@ gendat.mouse$gentype <- 1
 gendat.mouse$meancx <- .78
 gendat.mouse <- gen.barmouse[1]
 
+limits <- aes(ymax=cihi,ymin=cilo)
+dodge <- position_dodge(width=.9)
 gen.barmouse <- ggplot(gendat.mouse,aes(x=as.factor(mouse),y=meancx,fill=as.factor(gentype))) + 
   geom_bar(position=dodge,stat="identity") +
   geom_errorbar(limits,position=dodge,width=0.25,size=0.4) + 
