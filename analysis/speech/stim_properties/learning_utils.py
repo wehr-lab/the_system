@@ -81,25 +81,60 @@ def spectrogram_from_files(file_loc, SPECT_PARAMS):
         specs[i] = a_spec
     return f, t, specs
 
-def spectrogram_for_training(file_loc, SPECT_PARAMS, phovect_idx):
+def spectrogram_for_training(file_loc, SPECT_PARAMS, phovect_idx, n_jitter = 1, jitter_range = None):
     phonemes = dict()
     specs = dict()
-    constype  = np.zeros((len(phovect_idx),2),dtype=np.float)
-    vowtype   = np.zeros((len(phovect_idx),6),dtype=np.float)
-    speaktype = np.zeros((len(phovect_idx),5),dtype=np.float)
+    constype  = np.zeros((len(phovect_idx),2),dtype=np.bool)
+    vowtype   = np.zeros((len(phovect_idx),6),dtype=np.bool)
+    speaktype = np.zeros((len(phovect_idx),5),dtype=np.bool)
     maxlen = 0
     for i, loc in file_loc.items():
         fs, phoneme = wavfile.read(loc)
         a_spec = melspectrogram(phoneme, sr=fs, **SPECT_PARAMS)
         specs[i] = a_spec
 
-        constype[i,phovect_idx[i][0]-1] = 1.
-        speaktype[i,phovect_idx[i][1]-1] = 1.
-        vowtype[i,phovect_idx[i][2]-1] = 1.
+        #constype[i] = np.bool(phovect_idx[i][0]-1)
+        constype[i,(phovect_idx[i][0]-1)] = True
 
-    specs_np = np.zeros((len(specs),specs[0].shape[0],specs[0].shape[1],1),dtype=np.float)
-    for i, spec in specs.items():
-            specs_np[i,:,:,0] = spec
+        speaktype[i,phovect_idx[i][1]-1] = True
+        vowtype[i,phovect_idx[i][2]-1] = True
+
+
+
+        # Make numpy array of sounds, and if requested, randomly jitter start time
+    if n_jitter == 1:
+        specs_np = np.zeros((len(specs),specs[0].shape[0],specs[0].shape[1],1),dtype=np.float)
+        for i, spec in specs.items():
+                specs_np[i,:,:,0] = spec
+    else:
+        # In this version, we jitter by an integer amount of time bins
+        jitmax = np.int(jitter_range)
+        specs_np  = np.zeros((len(specs) * n_jitter,specs[0].shape[0],
+                                specs[0].shape[1]+jitmax,1),
+                                dtype = np.int16)
+        constype_np  = np.zeros(((len(specs) * n_jitter),2),
+                                dtype = np.bool)
+        vowtype_np   = np.zeros((len(specs) * n_jitter, 6),
+                                dtype=np.bool)
+        speaktype_np = np.zeros((len(specs) * n_jitter, 5),
+                                dtype=np.bool)
+
+        for i, spec in specs.items():
+            for j in range(n_jitter):
+                thisind = np.int(i*n_jitter + j)
+                jitby = np.int(np.random.randint(0,jitmax))
+                specs_np[thisind,0:spec.shape[0],jitby:(jitby+spec.shape[1]),0] = spec
+                constype_np[thisind,(phovect_idx[i][0]-1)] = True
+                #constype_np[thisind] = np.bool(phovect_idx[i][0]-1)
+                speaktype_np[thisind,phovect_idx[i][1]-1] = True
+                vowtype_np[thisind,phovect_idx[i][2]-1] = True
+
+        # rename constype so we don't have multiple return conditions
+        constype  = constype_np
+        speaktype = speaktype_np
+        vowtype   = vowtype_np
+
+
 
     randind = np.random.permutation(specs_np.shape[0])
     specs_np = specs_np[randind,:,:,:]
@@ -109,6 +144,7 @@ def spectrogram_for_training(file_loc, SPECT_PARAMS, phovect_idx):
 
 
     return specs_np,constype,speaktype,vowtype
+
 
 def audio_from_files(file_loc,phovect_idx,n_jitter=1,jitter_range=.1):
 

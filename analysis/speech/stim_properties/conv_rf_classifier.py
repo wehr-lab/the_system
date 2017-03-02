@@ -38,22 +38,22 @@ PHOVECT_COLS = ['consonant', 'speaker', 'vowel', 'token']
 NAMES = ['Jonny', 'Ira', 'Anna', 'Dani', 'Theresa']
 CONS = ['g', 'b']
 VOWS = ['I', 'o', 'a', 'ae', 'e', 'u']
-PHONEME_DIR = '/Users/Jonny/Github/SVN-ComboPack/ratrixSounds/phonemes/'
+PHONEME_DIR = '~/github/SVN-ComboPack/ratrixSounds/phonemes/'
 
 MAPBACK = {'g':1,'b':2,
            'Jonny':1,'Ira':2,'Anna':3,'Dani':4,'Theresa':5,
            'I':1,'o':2,'a':3,'ae':4,'e':5,'u':6}
 
-DATA_DIR = '/Users/Jonny/Documents/fixSpeechData/'
+# DATA_DIR = '/Users/Jonny/Documents/fixSpeechData/'
 
-PROP_TRAIN = 0.9 # Proportion of data to use as training data
+# PROP_TRAIN = 0.9 # Proportion of data to use as training data
 
-N_CONV_FILTERS = 64
+N_CONV_FILTERS = 256
 
 
 ##########################################
 # Load data for 1 mouse
-f = '/Users/Jonny/Documents/fixSpeechData/6928.h5'
+# f = '/Users/Jonny/Documents/fixSpeechData/6928.h5'
 
 phovect_idx, phovect_xdi, file_idx, file_loc = make_phoneme_iterators(NAMES, CONS, VOWS, MAPBACK, PHONEME_DIR)
 mels,        mels_np                         = mel_from_files(file_loc, MEL_PARAMS)
