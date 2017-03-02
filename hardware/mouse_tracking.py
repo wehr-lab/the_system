@@ -13,6 +13,12 @@ mouse = devices.mice[0]
 
 # Convenience function to manipulate PWM
 def set(property, value):
+    if not type(value) == str:
+        try:
+            value = str(value)
+        except:
+            print "I ONLY EAT STRINGS, YOU KNOW THAT ABOUT ME"
+
     try:
         f = open("/sys/class/rpi-pwm/pwm0/" + property, 'w')
         f.write(value)
@@ -49,6 +55,7 @@ def update_pwm():
         set('duty', str(move_local))
         Timer(SAMPLE_INTERVAL, update_pwm).start()
 
+    # If we haven't gotten any movements since the last update...
     else:
         baseline()
         Timer(SAMPLE_INTERVAL, update_pwm).start()
