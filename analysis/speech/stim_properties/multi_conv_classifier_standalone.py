@@ -18,6 +18,9 @@ import threading
 
 # Testing Hualos for visualization
 #import api
+#sthread = threading.Thread(target=server.serve_forever)
+#sthread.setDaemon(True)
+#sthread.start()
 
 
 PHOVECT_COLS = ['consonant', 'speaker', 'vowel', 'token']
@@ -88,6 +91,18 @@ phovect_idx, phovect_xdi, file_idx, file_loc = (
 
 X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
 
+def concat_cons_speak(cons, speak):
+    cat = np.zeros((speak.shape[0],10), dtype=np.bool)
+    for i in range(speak.shape[0]):
+        if cons[i,0]:
+            cat[i,np.where(speak[i,:])[0][0]] = True
+        else:
+            cat[i, np.where(speak[i, :])[0][0]+5] = True
+
+    return cat
+
+conscat = concat_cons_speak(cons_train, speak_train)
+
 ##########################################
 # Custom model functions/objects
 def mean_pred(y_true,y_pred):
@@ -106,9 +121,9 @@ learn_drop = ReduceLROnPlateau(monitor="loss",
                                verbose=1
                                )
 
-checkpoint = ModelCheckpoint('/home/lab/Speech_Models/multi_mel_conv_3_E{epoch:02d}-L{loss:.2f}-cons{cons_acc:.2f}_speak{speak_acc:.2f}_vow{vow_acc:.2f}', monitor="val_loss")
+checkpoint = ModelCheckpoint('/home/lab/Speech_Models/multi_mel_conv_conscat_E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}', monitor="val_loss")
 
-#remote = RemoteMonitor(root='http://localhost:9000')
+remote = RemoteMonitor(root='http://localhost:9000')
 
 #s_thread = threading.Thread(target=api.server.serve_forever)
 #s_thread.start()
@@ -228,19 +243,19 @@ if not loaded:
     l_dact_1   = ELU()(l_dnorm_1)
     l_ddrop_1  = Dropout(0.5)(l_dact_1)
 
-    l_dense_2  = Dense(N_CONV_FILTERS,
-                       init="he_normal",
-                       W_regularizer=l2(L2_WEIGHT))(l_flat)
-    l_dnorm_2 = BatchNormalization(axis=-1)(l_dense_2)
-    l_dact_2   = ELU()(l_dnorm_2)
-    l_ddrop_2  = Dropout(0.5)(l_dact_2)
-
-    l_dense_3  = Dense(N_CONV_FILTERS,
-                       init="he_normal",
-                       W_regularizer=l2(L2_WEIGHT))(l_flat)
-    l_dnorm_3 = BatchNormalization(axis=-1)(l_dense_3)
-    l_dact_3   = ELU()(l_dnorm_3)
-    l_ddrop_3  = Dropout(0.5)(l_dact_3)
+    # l_dense_2  = Dense(N_CONV_FILTERS,
+    #                    init="he_normal",
+    #                    W_regularizer=l2(L2_WEIGHT))(l_flat)
+    # l_dnorm_2 = BatchNormalization(axis=-1)(l_dense_2)
+    # l_dact_2   = ELU()(l_dnorm_2)
+    # l_ddrop_2  = Dropout(0.5)(l_dact_2)
+    #
+    # l_dense_3  = Dense(N_CONV_FILTERS,
+    #                    init="he_normal",
+    #                    W_regularizer=l2(L2_WEIGHT))(l_flat)
+    # l_dnorm_3 = BatchNormalization(axis=-1)(l_dense_3)
+    # l_dact_3   = ELU()(l_dnorm_3)
+    # l_ddrop_3  = Dropout(0.5)(l_dact_3)
     # l_dense_2  = Dense(N_CONV_FILTERS*2,activation="tanh",
     #                    init="he_normal",
     #                    W_regularizer=l2(L2_WEIGHT))(l_ddrop_1)
@@ -262,35 +277,36 @@ if not loaded:
     #                     W_regularizer=l2(L2_WEIGHT))(l_merge)
     # l_drop_2    = Dropout(0.5)(l_dense_2)
 
-    l_out_cons  = Dense(2,activation='sigmoid',
+    l_out_cons  = Dense(10,activation='sigmoid',
                         init="he_normal",
-                        name="cons",
+                        name="cons_spk",
                         W_regularizer=l2(L2_WEIGHT))(l_ddrop_1)
-    l_out_speak = Dense(5,activation='sigmoid',
-                        init="he_normal",
-                        name="speak",
-                        W_regularizer=l2(L2_WEIGHT))(l_ddrop_2)
-    l_out_vow   = Dense(6,activation='sigmoid',
-                        init="he_normal",
-                        name="vow",
-                        W_regularizer=l2(L2_WEIGHT))(l_ddrop_3)
+    # l_out_speak = Dense(5,activation='sigmoid',
+    #                     init="he_normal",
+    #                     name="speak",
+    #                     W_regularizer=l2(L2_WEIGHT))(l_ddrop_2)
+    # l_out_vow   = Dense(6,activation='sigmoid',
+    #                     init="he_normal",
+    #                     name="vow",
+    #                     W_regularizer=l2(L2_WEIGHT))(l_ddrop_3)
 
 
     # COMPILE MODEL
     model = Model(input=[l_input],
-                  output=[l_out_cons,l_out_speak,l_out_vow])
+                  output=[l_out_cons])
                   #output=[l_out_cons])
     model.compile(optimizer=optimizer,
-                  loss=['categorical_crossentropy',
-                        'categorical_crossentropy',
-                        'categorical_crossentropy'],
-                  loss_weights=[1., 0.25, 0.25],
-                  #loss='categorical_crossentropy',
+                  #loss=['categorical_crossentropy',
+                  #      'categorical_crossentropy',
+                  #      'categorical_crossentropy'],
+                  #loss_weights=[1., 0.25, 0.25],
+                  loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
-
+for i in range(5):
     X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
+    conscat = concat_cons_speak(cons_train, speak_train)
         #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
-    model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=10, nb_epoch=200,callbacks=[learn_drop,checkpoint])
+    model.fit(X_train, conscat, batch_size=10, nb_epoch=300,callbacks=[learn_drop,checkpoint,remote])
 
 
