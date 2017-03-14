@@ -307,6 +307,6 @@ for i in range(5):
     X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
     conscat = concat_cons_speak(cons_train, speak_train)
         #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
-    model.fit(X_train, conscat, batch_size=10, nb_epoch=300,callbacks=[learn_drop,checkpoint,remote])
+    model.fit(X_train, conscat, batch_size=10, nb_epoch=200,callbacks=[learn_drop,checkpoint,remote])
 
 
