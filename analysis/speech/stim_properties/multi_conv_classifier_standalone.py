@@ -79,7 +79,7 @@ OPTIMIZER_TYPE = "adam" # nadam, adam, or rmsprop
 NET_TYPE       = LOAD_PARAMS["net_type"]
 
 # Jitter audio so all don't start at same time
-N_JIT = 3
+N_JIT = 1
 JIT_AMT = 10 # In seconds or time bins
 
 
@@ -121,7 +121,7 @@ learn_drop = ReduceLROnPlateau(monitor="loss",
                                verbose=1
                                )
 
-checkpoint = ModelCheckpoint('/home/lab/Speech_Models/multi_mel_conv_conscat_E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}', monitor="val_loss")
+checkpoint = ModelCheckpoint('/home/lab/Speech_Models/naked_conv_conscat_E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}', monitor="val_loss")
 
 remote = RemoteMonitor(root='http://localhost:9000')
 
@@ -236,12 +236,12 @@ if not loaded:
     # # DENSE LAYERS
     l_flat     = Flatten()(l_pool_2)
 
-    l_dense_1  = Dense(N_CONV_FILTERS,
-                       init="he_normal",
-                       W_regularizer=l2(L2_WEIGHT))(l_flat)
-    l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
-    l_dact_1   = ELU()(l_dnorm_1)
-    l_ddrop_1  = Dropout(0.5)(l_dact_1)
+    #l_dense_1  = Dense(N_CONV_FILTERS,
+    #                   init="he_normal",
+    #                   W_regularizer=l2(L2_WEIGHT))(l_flat)
+    #l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
+    #l_dact_1   = ELU()(l_dnorm_1)
+    #l_ddrop_1  = Dropout(0.5)(l_dact_1)
 
     # l_dense_2  = Dense(N_CONV_FILTERS,
     #                    init="he_normal",
@@ -280,7 +280,7 @@ if not loaded:
     l_out_cons  = Dense(10,activation='sigmoid',
                         init="he_normal",
                         name="cons_spk",
-                        W_regularizer=l2(L2_WEIGHT))(l_ddrop_1)
+                        W_regularizer=l2(L2_WEIGHT))(l_flat)
     # l_out_speak = Dense(5,activation='sigmoid',
     #                     init="he_normal",
     #                     name="speak",
@@ -307,6 +307,6 @@ for i in range(5):
     X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
     conscat = concat_cons_speak(cons_train, speak_train)
         #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
-    model.fit(X_train, conscat, batch_size=10, nb_epoch=200,callbacks=[learn_drop,checkpoint,remote])
+    model.fit(X_train, conscat, batch_size=20, nb_epoch=200,callbacks=[learn_drop,checkpoint,remote])
 
 

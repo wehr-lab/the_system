@@ -1,6 +1,7 @@
 import os
 from keras.models import load_model
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import plotly
 import plotly.plotly as py
@@ -8,6 +9,7 @@ import plotly.graph_objs as go
 from scipy.spatial.distance import pdist, squareform
 import pandas as pd
 import tables
+from collections import OrderedDict as odict
 
 from keras import backend as K
 
@@ -35,7 +37,7 @@ py.plot(scat_traces, filename="scatter-positions3")
 # Max activations of classes
 
 ## Params
-n_stim   = 5 # num stim per model/class
+n_stim   = 2 # num stim per model/class
 classind = 2 # /b/ of speaker 3
 
 classes = ['1g','2g','3g','4g','5g','1b','2b','3b','4b','5b']
@@ -46,24 +48,74 @@ min_max = [np.min(X_train), np.max(X_train)]
 ## Dataframe to store
 h5f = tables.open_file(model_dir+"/class_max_2.h5", mode="w", title = "Max class of classifiers")
 
-
-
-for j in range(len(models)):
-    modelname = model_fs[j].split('/')[-1]
-    group = h5f.create_group("/", modelname, "Max stim for model")
-    for i in range(10):
-        stimclass = h5f.create_group(group, classes[i], "Max stim for class {}".format(classes[i]))
-        for k in range(n_stim):
-            print("model: {}, class: {}, iter: {}".format(str(j), classes[i], str(k)))
-            preds, img = max_class_act(models[j], i, img_shape, min_max)
-            img_t = h5f.create_array(stimclass, classes[i]+"_"+str(k)+"_maxstim", img, "MaxStim")
-            preds_t = h5f.create_array(stimclass, classes[i]+"_"+str(k)+"_preds", preds, "Preds")
+#for j in range(len(models)):
+j = 0
+modelname = model_fs[j].split('/')[-1]
+group = h5f.create_group("/", modelname, "Max stim for model")
+for i in range(10):
+    stimclass = h5f.create_group(group, classes[i], "Max stim for class {}".format(classes[i]))
+    for k in range(n_stim):
+        print("model: {}, class: {}, iter: {}".format(str(j), classes[i], str(k)))
+        preds, img = max_class_act(models[j], i, img_shape, min_max)
+        img_t = h5f.create_array(stimclass, classes[i]+"_"+str(k)+"_maxstim", img, "MaxStim")
+        preds_t = h5f.create_array(stimclass, classes[i]+"_"+str(k)+"_preds", preds, "Preds")
+        img_t.flush()
+        preds_t.flush()
 h5f.close()
 
 
+#######################################
+# Distance from activations for prototypes
+h5f = tables.open_file(model_dir+"/class_max_2.h5", mode="r")
+model = models[0]
 
+activation_out = K.function([model.layers[0].input, K.learning_phase()],
+                            [model.layers_by_depth[0][0].input])
+
+model_maxstim = h5f.root._v_children.values()[0]
+sample_maxstim = list()
+for i in range(n_stim):
+    sample_maxstim.append(odict())
+    for stimclass in sorted(model_maxstim._v_children):
+        acts = model_maxstim._v_children[stimclass]
+        child_keys = [k for k in acts._v_children.keys() if "maxstim" in k]
+        child_key = child_keys[i]
+        sample_maxstim[i][stimclass] = acts._f_get_child(child_key).read()
+
+# Get sample output for shape
+n_col = np.ndarray.flatten(activation_out([sample_maxstim[0]['1b'], 0])[0]).shape[0]
+n_row = len(sample_maxstim[0])
+
+# Get out weights and reorder
+out_weights = model.layers[-1].get_weights()[0].transpose()
+# we need to take [1g,2g,3g,4g,5g,1b,2b,3b,4b,5b] to [1b,1g,2b,2g,3b,3g,4b,4g,5b,5g]
+row_order = [5,0,6,1,7,2,8,3,9,4]
+out_weights = out_weights[row_order,:]
+
+# want a dictionary of dict['input_stimclass'] = distances, so a distance matrix for every stimclass
+model_distances = list()
+for i in range(n_stim):
+    dist_dict = odict()
+    for stimclass, maxact in sample_maxstim[i].items():
+        this_act = activation_out([maxact, 0])[0]
+        class_act = np.multiply(this_act, out_weights)
+        dist_dict[stimclass] = nonzero_norm(squareform(pdist(class_act)), [0,1])
+    model_distances.append(dist_dict)
+
+
+
+
+
+    model_acts = np.multiply(model_acts, out_weights)
+    model_distances.append(nonzero_norm(squareform(pdist(model_acts)), [0,1]))
 
 #######################################
+def nonzero_norm(X, range=[0,1]):
+    zeroinds = np.nonzero(X)
+    X[zeroinds] = (X[zeroinds]-np.min(X[zeroinds]))/(np.max(X[zeroinds])-np.min(X[zeroinds]))
+    X[zeroinds] = X[zeroinds] * (range[1]-range[0]) + range[0]
+    return X
+
 def sne_last_weights(models):
     # Embed last layer weights in 2D and get distance matrix
     # Input: model or list of models
