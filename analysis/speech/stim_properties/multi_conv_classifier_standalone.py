@@ -79,8 +79,11 @@ OPTIMIZER_TYPE = "adam" # nadam, adam, or rmsprop
 NET_TYPE       = LOAD_PARAMS["net_type"]
 
 # Jitter audio so all don't start at same time
-N_JIT = 1
+N_JIT = 3
 JIT_AMT = 10 # In seconds or time bins
+
+# Number of models to train per run
+N_MODELS = 5
 
 
 ##########################################
@@ -117,11 +120,11 @@ learn_drop = ReduceLROnPlateau(monitor="loss",
                                mode="min",
                                epsilon=0.1,
                                cooldown=5,
-                               min_lr=(LEARN_RATE/1000),
+                               min_lr=(LEARN_RATE/100),
                                verbose=1
                                )
 
-checkpoint = ModelCheckpoint('/home/lab/Speech_Models/naked_conv_conscat_E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}', monitor="val_loss")
+# checkpoint = ModelCheckpoint('/home/lab/Speech_Models/naked_conv_conscat_E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}', monitor="val_loss")
 
 remote = RemoteMonitor(root='http://localhost:9000')
 
@@ -145,168 +148,203 @@ for opt, arg in opts:
         loaded = True
 
 if not loaded:
-    print('Building model')
+    for i in range(N_MODELS):
+        mnum = i+1
+        print('Building model {}'.format(mnum))
 
-    if OPTIMIZER_TYPE == "nadam":
-        optimizer = Nadam(lr=LEARN_RATE)
-    elif OPTIMIZER_TYPE == "adam":
-        optimizer = Adam(lr=LEARN_RATE)
-    else:
-        optimizer = RMSprop(lr=LEARN_RATE, clipnorm=1.)
+        prestring = '/home/lab/Speech_Models/naked_conv_conscat_M{}_'.format(mnum)
 
-    #Build model
-    #Convolution layers
-    #As per https://arxiv.org/pdf/1412.6806v3.pdf
+        checkpoint = ModelCheckpoint(
+            prestring+'E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}',
+            monitor="loss")
 
-    # CONV LEVEL 1
-    l_input = Input(batch_shape=X_train.shape)
-    l_conv_1_1 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
-                            init='he_normal',
-                            border_mode='same',
-                            dim_ordering="tf",
-                            W_regularizer=l2(L2_WEIGHT))(l_input)
-    l_norm_1_1 = BatchNormalization(axis=3)(l_conv_1_1)
-    l_act_1_1  = ELU()(l_norm_1_1)
-    l_drop_1_1 = Dropout(0.5)(l_act_1_1)
+        if OPTIMIZER_TYPE == "nadam":
+            optimizer = Nadam(lr=LEARN_RATE)
+        elif OPTIMIZER_TYPE == "adam":
+            optimizer = Adam(lr=LEARN_RATE)
+        else:
+            optimizer = RMSprop(lr=LEARN_RATE, clipnorm=1.)
 
-    l_conv_1_2 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
-                            init='he_normal',
-                            border_mode='same',
-                            W_regularizer=l2(L2_WEIGHT))(l_drop_1_1)
-    l_norm_1_2 = BatchNormalization(axis=3)(l_conv_1_2)
-    l_act_1_2  = ELU()(l_norm_1_2)
-    l_drop_1_2 = Dropout(0.5)(l_act_1_2)
+        #Build model
+        #Convolution layers
+        #As per https://arxiv.org/pdf/1412.6806v3.pdf
 
-    l_conv_1_3 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
-                            init='he_normal',
-                            border_mode='same',
-                            W_regularizer=l2(L2_WEIGHT))(l_drop_1_2)
-    l_norm_1_3 = BatchNormalization(axis=3)(l_conv_1_3)
-    l_act_1_3  = ELU()(l_norm_1_3)
-    l_drop_1_3 = Dropout(0.5)(l_act_1_3)
+        # CONV LEVEL 1
+        l_input = Input(batch_shape=X_train.shape)
+        l_conv_1_1 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                dim_ordering="tf",
+                                W_regularizer=l2(L2_WEIGHT))(l_input)
+        l_norm_1_1 = BatchNormalization(axis=3)(l_conv_1_1)
+        l_act_1_1  = ELU()(l_norm_1_1)
+        l_drop_1_1 = Dropout(0.35)(l_act_1_1)
 
-    l_pool_1   = MaxPooling2D(pool_size=(2,2))(l_drop_1_3)
+        l_conv_1_2 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_drop_1_1)
+        l_norm_1_2 = BatchNormalization(axis=3)(l_conv_1_2)
+        l_act_1_2  = ELU()(l_norm_1_2)
+        l_drop_1_2 = Dropout(0.35)(l_act_1_2)
 
-    # CONV LEVEL 2
-    l_conv_2_1 = Convolution2D(N_CONV_FILTERS*2, FILT_LEN, FILT_LEN,
-                            init='he_normal',
-                            border_mode='same',
-                            W_regularizer=l2(L2_WEIGHT))(l_pool_1)
-    l_norm_2_1 = BatchNormalization(axis=3)(l_conv_2_1)
-    l_act_2_1  = ELU()(l_norm_2_1)
-    l_drop_2_1 = Dropout(0.5)(l_act_2_1)
+        l_conv_1_3 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_drop_1_2)
+        l_norm_1_3 = BatchNormalization(axis=3)(l_conv_1_3)
+        l_act_1_3  = ELU()(l_norm_1_3)
+        l_drop_1_3 = Dropout(0.35)(l_act_1_3)
 
-    l_conv_2_2 = Convolution2D(N_CONV_FILTERS*2, FILT_LEN, FILT_LEN,
-                            init='he_normal',
-                            border_mode='same',
-                            W_regularizer=l2(L2_WEIGHT))(l_drop_2_1)
-    l_norm_2_2 = BatchNormalization(axis=3)(l_conv_2_2)
-    l_act_2_2  = ELU()(l_norm_2_2)
-    l_drop_2_2 = Dropout(0.5)(l_act_2_2)
+        l_pool_1   = MaxPooling2D(pool_size=(2,2))(l_drop_1_3)
 
-    l_conv_2_3 = Convolution2D(N_CONV_FILTERS*2, FILT_LEN, FILT_LEN,
-                            init='he_normal',
-                            border_mode='same',
-                            W_regularizer=l2(L2_WEIGHT))(l_drop_2_2)
-    l_norm_2_3 = BatchNormalization(axis=3)(l_conv_2_3)
-    l_act_2_3  = ELU()(l_norm_2_3)
-    l_drop_2_3 = Dropout(0.5)(l_act_2_3)
+        # CONV LEVEL 2
+        l_conv_2_1 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_pool_1)
+        l_norm_2_1 = BatchNormalization(axis=3)(l_conv_2_1)
+        l_act_2_1  = ELU()(l_norm_2_1)
+        l_drop_2_1 = Dropout(0.35)(l_act_2_1)
 
-    l_pool_2   = MaxPooling2D(pool_size=(2,2))(l_drop_2_3)
+        l_conv_2_2 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_drop_2_1)
+        l_norm_2_2 = BatchNormalization(axis=3)(l_conv_2_2)
+        l_act_2_2  = ELU()(l_norm_2_2)
+        l_drop_2_2 = Dropout(0.35)(l_act_2_2)
 
-    # CONV LEVEL 3
-    # l_conv_3_1 = Convolution2D(N_CONV_FILTERS*4, FILT_LEN, FILT_LEN,
-    #                         init='he_normal',
-    #                         border_mode='same',
-    #                         W_regularizer=l2(L2_WEIGHT))(l_pool_2)
-    # l_norm_3_1 = BatchNormalization(axis=3)(l_conv_3_1)
-    # l_act_3_1  = ELU()(l_norm_3_1)
-    # l_drop_3_1 = Dropout(0.3)(l_act_3_1)
+        l_conv_2_3 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_drop_2_2)
+        l_norm_2_3 = BatchNormalization(axis=3)(l_conv_2_3)
+        l_act_2_3  = ELU()(l_norm_2_3)
+        l_drop_2_3 = Dropout(0.35)(l_act_2_3)
 
-    # l_conv_3_2 = Convolution2D(N_CONV_FILTERS*4, FILT_LEN, FILT_LEN,
-    #                         init='he_normal',
-    #                         border_mode='same',
-    #                         W_regularizer=l2(L2_WEIGHT))(l_drop_3_1)
-    # l_norm_3_2 = BatchNormalization(axis=3)(l_conv_3_2)
-    # l_act_3_2  = ELU()(l_norm_3_2)
-    # l_drop_3_2 = Dropout(0.3)(l_act_3_2)
-    # l_pool_3   = MaxPooling2D(pool_size=(2,2))(l_drop_3_2)
+        l_pool_2   = MaxPooling2D(pool_size=(2,2))(l_drop_2_3)
 
+        # CONV LEVEL 3
+        l_conv_3_1 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_pool_2)
+        l_norm_3_1 = BatchNormalization(axis=3)(l_conv_3_1)
+        l_act_3_1  = ELU()(l_norm_3_1)
+        l_drop_3_1 = Dropout(0.35)(l_act_3_1)
 
-    # # DENSE LAYERS
-    l_flat     = Flatten()(l_pool_2)
+        l_conv_3_2 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_drop_3_1)
+        l_norm_3_2 = BatchNormalization(axis=3)(l_conv_3_2)
+        l_act_3_2  = ELU()(l_norm_3_2)
+        l_drop_3_2 = Dropout(0.35)(l_act_3_2)
 
-    #l_dense_1  = Dense(N_CONV_FILTERS,
-    #                   init="he_normal",
-    #                   W_regularizer=l2(L2_WEIGHT))(l_flat)
-    #l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
-    #l_dact_1   = ELU()(l_dnorm_1)
-    #l_ddrop_1  = Dropout(0.5)(l_dact_1)
+        l_conv_3_3 = Convolution2D(N_CONV_FILTERS, FILT_LEN, FILT_LEN,
+                                init='he_normal',
+                                border_mode='same',
+                                W_regularizer=l2(L2_WEIGHT))(l_drop_3_2)
+        l_norm_3_3 = BatchNormalization(axis=3)(l_conv_3_3)
+        l_act_3_3  = ELU()(l_norm_3_3)
+        l_drop_3_3 = Dropout(0.35)(l_act_3_3)
 
-    # l_dense_2  = Dense(N_CONV_FILTERS,
-    #                    init="he_normal",
-    #                    W_regularizer=l2(L2_WEIGHT))(l_flat)
-    # l_dnorm_2 = BatchNormalization(axis=-1)(l_dense_2)
-    # l_dact_2   = ELU()(l_dnorm_2)
-    # l_ddrop_2  = Dropout(0.5)(l_dact_2)
-    #
-    # l_dense_3  = Dense(N_CONV_FILTERS,
-    #                    init="he_normal",
-    #                    W_regularizer=l2(L2_WEIGHT))(l_flat)
-    # l_dnorm_3 = BatchNormalization(axis=-1)(l_dense_3)
-    # l_dact_3   = ELU()(l_dnorm_3)
-    # l_ddrop_3  = Dropout(0.5)(l_dact_3)
-    # l_dense_2  = Dense(N_CONV_FILTERS*2,activation="tanh",
-    #                    init="he_normal",
-    #                    W_regularizer=l2(L2_WEIGHT))(l_ddrop_1)
-    # l_ddrop_2  = Dropout(0.3)(l_dense_2)
+        l_pool_3   = MaxPooling2D(pool_size=(2,2))(l_drop_3_3)
 
-    # OUTPUTS
-    # l_out_speak = Dense(5,activation='softmax',
-    #                     init="he_normal",
-    #                     name="speak",
-    #                     W_regularizer=l2(L2_WEIGHT))(l_flat)
-    # l_out_vow   = Dense(6,activation='softmax',
-    #                     init="he_normal",
-    #                     name="vow",
-    #                     W_regularizer=l2(L2_WEIGHT))(l_flat)
+        # CONV LEVEL 3
+        # l_conv_3_1 = Convolution2D(N_CONV_FILTERS*4, FILT_LEN, FILT_LEN,
+        #                         init='he_normal',
+        #                         border_mode='same',
+        #                         W_regularizer=l2(L2_WEIGHT))(l_pool_2)
+        # l_norm_3_1 = BatchNormalization(axis=3)(l_conv_3_1)
+        # l_act_3_1  = ELU()(l_norm_3_1)
+        # l_drop_3_1 = Dropout(0.3)(l_act_3_1)
 
-    # l_merge     = merge([l_flat,l_out_speak,l_out_vow],mode='concat',concat_axis=1)
-    # l_dense_2   = Dense(N_CONV_FILTERS*2,activation="relu",
-    #                     init="he_normal",
-    #                     W_regularizer=l2(L2_WEIGHT))(l_merge)
-    # l_drop_2    = Dropout(0.5)(l_dense_2)
-
-    l_out_cons  = Dense(10,activation='sigmoid',
-                        init="he_normal",
-                        name="cons_spk",
-                        W_regularizer=l2(L2_WEIGHT))(l_flat)
-    # l_out_speak = Dense(5,activation='sigmoid',
-    #                     init="he_normal",
-    #                     name="speak",
-    #                     W_regularizer=l2(L2_WEIGHT))(l_ddrop_2)
-    # l_out_vow   = Dense(6,activation='sigmoid',
-    #                     init="he_normal",
-    #                     name="vow",
-    #                     W_regularizer=l2(L2_WEIGHT))(l_ddrop_3)
+        # l_conv_3_2 = Convolution2D(N_CONV_FILTERS*4, FILT_LEN, FILT_LEN,
+        #                         init='he_normal',
+        #                         border_mode='same',
+        #                         W_regularizer=l2(L2_WEIGHT))(l_drop_3_1)
+        # l_norm_3_2 = BatchNormalization(axis=3)(l_conv_3_2)
+        # l_act_3_2  = ELU()(l_norm_3_2)
+        # l_drop_3_2 = Dropout(0.3)(l_act_3_2)
+        # l_pool_3   = MaxPooling2D(pool_size=(2,2))(l_drop_3_2)
 
 
-    # COMPILE MODEL
-    model = Model(input=[l_input],
-                  output=[l_out_cons])
-                  #output=[l_out_cons])
-    model.compile(optimizer=optimizer,
-                  #loss=['categorical_crossentropy',
-                  #      'categorical_crossentropy',
-                  #      'categorical_crossentropy'],
-                  #loss_weights=[1., 0.25, 0.25],
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
+        # # DENSE LAYERS
+        l_flat     = Flatten()(l_pool_3)
 
-for i in range(5):
-    X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
-    conscat = concat_cons_speak(cons_train, speak_train)
-        #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
-    model.fit(X_train, conscat, batch_size=20, nb_epoch=200,callbacks=[learn_drop,checkpoint,remote])
+        #l_dense_1  = Dense(N_CONV_FILTERS,
+        #                   init="he_normal",
+        #                   W_regularizer=l2(L2_WEIGHT))(l_flat)
+        #l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
+        #l_dact_1   = ELU()(l_dnorm_1)
+        #l_ddrop_1  = Dropout(0.5)(l_dact_1)
+
+        # l_dense_2  = Dense(N_CONV_FILTERS,
+        #                    init="he_normal",
+        #                    W_regularizer=l2(L2_WEIGHT))(l_flat)
+        # l_dnorm_2 = BatchNormalization(axis=-1)(l_dense_2)
+        # l_dact_2   = ELU()(l_dnorm_2)
+        # l_ddrop_2  = Dropout(0.5)(l_dact_2)
+        #
+        # l_dense_3  = Dense(N_CONV_FILTERS,
+        #                    init="he_normal",
+        #                    W_regularizer=l2(L2_WEIGHT))(l_flat)
+        # l_dnorm_3 = BatchNormalization(axis=-1)(l_dense_3)
+        # l_dact_3   = ELU()(l_dnorm_3)
+        # l_ddrop_3  = Dropout(0.5)(l_dact_3)
+        # l_dense_2  = Dense(N_CONV_FILTERS*2,activation="tanh",
+        #                    init="he_normal",
+        #                    W_regularizer=l2(L2_WEIGHT))(l_ddrop_1)
+        # l_ddrop_2  = Dropout(0.3)(l_dense_2)
+
+        # OUTPUTS
+        # l_out_speak = Dense(5,activation='softmax',
+        #                     init="he_normal",
+        #                     name="speak",
+        #                     W_regularizer=l2(L2_WEIGHT))(l_flat)
+        # l_out_vow   = Dense(6,activation='softmax',
+        #                     init="he_normal",
+        #                     name="vow",
+        #                     W_regularizer=l2(L2_WEIGHT))(l_flat)
+
+        # l_merge     = merge([l_flat,l_out_speak,l_out_vow],mode='concat',concat_axis=1)
+        # l_dense_2   = Dense(N_CONV_FILTERS*2,activation="relu",
+        #                     init="he_normal",
+        #                     W_regularizer=l2(L2_WEIGHT))(l_merge)
+        # l_drop_2    = Dropout(0.5)(l_dense_2)
+
+        l_out_cons  = Dense(10,activation='sigmoid',
+                            init="he_normal",
+                            name="cons_spk",
+                            W_regularizer=l2(L2_WEIGHT))(l_flat)
+        # l_out_speak = Dense(5,activation='sigmoid',
+        #                     init="he_normal",
+        #                     name="speak",
+        #                     W_regularizer=l2(L2_WEIGHT))(l_ddrop_2)
+        # l_out_vow   = Dense(6,activation='sigmoid',
+        #                     init="he_normal",
+        #                     name="vow",
+        #                     W_regularizer=l2(L2_WEIGHT))(l_ddrop_3)
+
+
+        # COMPILE MODEL
+        model = Model(input=[l_input],
+                      output=[l_out_cons])
+                      #output=[l_out_cons])
+        model.compile(optimizer=optimizer,
+                      #loss=['categorical_crossentropy',
+                      #      'categorical_crossentropy',
+                      #      'categorical_crossentropy'],
+                      #loss_weights=[1., 0.25, 0.25],
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+
+
+        X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
+        conscat = concat_cons_speak(cons_train, speak_train)
+            #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
+        model.fit(X_train, conscat, batch_size=10, nb_epoch=60,callbacks=[learn_drop,checkpoint,remote])
 
 
