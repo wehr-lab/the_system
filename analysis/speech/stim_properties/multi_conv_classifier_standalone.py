@@ -83,7 +83,7 @@ N_JIT = 3
 JIT_AMT = 10 # In seconds or time bins
 
 # Number of models to train per run
-N_MODELS = 5
+N_MODELS = 10
 
 
 ##########################################

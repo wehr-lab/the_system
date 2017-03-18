@@ -19,64 +19,23 @@ from keras import backend as K
 from learning_utils import *
 from params import Learn_params
 
-
-
-
-
-
-
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# plt.plot(a[:,0], a[:,1], "o")
+# plt.figtext(a[0,0], a[0,1], classes[0])
+# for i in range(len(classes)):
+#     ax.text(a[i,0],a[i,1], classes[i])
 
 
 #######################################
-# Distance from activations for prototypes
-# h5f = tables.open_file(model_dir+"/class_max_2.h5", mode="r")
-# model = models[0]
-#
-# activation_out = K.function([model.layers[0].input, K.learning_phase()],
-#                             [model.layers_by_depth[0][0].input])
-#
-# model_maxstim = h5f.root._v_children.values()[0]
-# sample_maxstim = list()
-# for i in range(n_stim):
-#     sample_maxstim.append(odict())
-#     for stimclass in sorted(model_maxstim._v_children):
-#         acts = model_maxstim._v_children[stimclass]
-#         child_keys = [k for k in acts._v_children.keys() if "maxstim" in k]
-#         child_key = child_keys[i]
-#         sample_maxstim[i][stimclass] = acts._f_get_child(child_key).read()
-#
-# # Get sample output for shape
-# n_col = np.ndarray.flatten(activation_out([sample_maxstim[0]['1b'], 0])[0]).shape[0]
-# n_row = len(sample_maxstim[0])
-#
-# # Get out weights and reorder
-# out_weights = model.layers[-1].get_weights()[0].transpose()
-# # we need to take [1g,2g,3g,4g,5g,1b,2b,3b,4b,5b] to [1b,1g,2b,2g,3b,3g,4b,4g,5b,5g]
-# row_order = [5,0,6,1,7,2,8,3,9,4]
-# out_weights = out_weights[row_order,:]
-#
-# # want a dictionary of dict['input_stimclass'] = distances, so a distance matrix for every stimclass
-# model_distances = list()
-# for i in range(n_stim):
-#     dist_dict = odict()
-#     for stimclass, maxact in sample_maxstim[i].items():
-#         this_act = activation_out([maxact, 0])[0]
-#         class_act = np.multiply(this_act, out_weights)
-#         dist_dict[stimclass] = nonzero_norm(squareform(pdist(class_act)), [0,1])
-#     model_distances.append(dist_dict)
-#
-#
-#
-#
-#
-#     model_acts = np.multiply(model_acts, out_weights)
-#     model_distances.append(nonzero_norm(squareform(pdist(model_acts)), [0,1]))
-
-#######################################
-def load_models(model_dir):
-    print("Loading models from {}".format(model_dir))
-    model_fs = os.listdir(model_dir)
-    model_fs = [os.path.join(model_dir, f) for f in model_fs if not ".h5" in f]
+def load_models(model_dir, models = None):
+    if not models:
+        print("Loading models from {}".format(model_dir))
+        model_fs = os.listdir(model_dir)
+        model_fs = [os.path.join(model_dir, f) for f in model_fs if not ".h5" in f]
+    elif models:
+        print("Given {} models to load".format(len(models)))
+        model_fs = [os.path.join(model_dir, f) for f in models]
 
     models = list()
     for f in tqdm(model_fs):
@@ -239,12 +198,158 @@ def max_models_classes(model_dir, n_stim, class_labels, img_shape, min_max):
 
     print("Max stim saved to {}".format(filename))
 
+#######################################
+# Distance from activations for prototypes
+def measure_distance(model_dir):
+
+    maxact_f   = [os.path.join(model_dir, f) for f in os.listdir(model_dir) if "class_max" in f]
+    maxact_h5f = tables.open_file(maxact_f[0], mode="r+")
+
+    # Get modelnames, first set of children under root, then load
+    # hack now until make consistent way to identify models
+    modelnames = [k for k in maxact_h5f.root._v_children.keys() if "conv" in k]
+    models, model_fs = load_models(model_dir, modelnames)
+
+    # Numpy arrays to store distances for each model
+    n_classes = models[0].layers_by_depth[0][0].output._keras_shape[1]
+    model_euc_dists = np.ndarray(shape=(len(models), n_classes, n_classes), dtype=np.float)
+    model_cos_dists = np.ndarray(shape=(len(models), n_classes, n_classes), dtype=np.float)
+
+    ## Iterate over models, stim classes, stim and get activations
+    for i in trange(len(models), desc="Models", leave=True, position=0):
+        # Keras function to return input to top layer
+        # The K.learning_phase() function tells the model not to do dropout,
+        # other shit that's only relevant for training - why we use [maxact, 0] later on
+        model = models[i]
+        top_activation = K.function([model.layers[0].input, K.learning_phase()],
+                                    [model.layers_by_depth[0][0].input])
+
+        #h5 group for model
+        model_maxstim = maxact_h5f.root._v_children.values()[i]
+        stim_classes = sorted(model_maxstim._v_children)
+
+        # Numpy array to hold activations before distance calculation
+        in_size = model.layers_by_depth[0][0].input._keras_shape[1]
+        act_array = np.ndarray(shape=(in_size, len(stim_classes)), dtype=np.float)
+
+        # Iterate over classes
+        for j in trange(len(stim_classes), desc="Classes", leave=True, position=1):
+            class_acts = model_maxstim._v_children[stim_classes[j]]
+            act_keys = [k for k in class_acts._v_children.keys() if "maxstim" in k]
+
+            # Numpy array to hold individual activations before averaging
+            stim_act_array = np.ndarray(shape=(in_size, len(act_keys)), dtype=np.float)
+
+            # Iterate over stimuli within a class
+            for k in trange(len(act_keys), desc="Stimuli", leave=True, position=2):
+                # Get stim and then activation
+                max_stim = class_acts._f_get_child(act_keys[k]).read()
+                stim_act_array[:,k] = top_activation([max_stim, 0])[0]
+
+            # Save variance vector, mean variance, and take mean
+            class_variance = np.var(stim_act_array, axis=1)
+            mean_activation = np.mean(stim_act_array, axis=1)
+
+            try:
+                cvar_t = maxact_h5f.create_array(class_acts, "class_var", class_variance, "class variance")
+                meanact_t = maxact_h5f.create_array(class_acts, "mean_act", mean_activation, "mean activation")
+            except tables.NodeError:
+                # we've already made these tables
+                cvar_t = class_acts.class_var
+                meanact_t = class_acts.mean_act
+                cvar_t[:] = class_variance
+                meanact_t[:] = mean_activation
+            class_acts._v_attrs.mean_var = np.mean(class_variance)
+            cvar_t.flush()
+            meanact_t.flush()
+
+            # add to array of all class activations
+            act_array[:,j] = mean_activation
+
+        # after getting activations from all classes, compute distances and save act_array
+        euc_distances = nonzero_norm(squareform(pdist(act_array.transpose())), [0,1])
+        cos_distances = squareform(pdist(act_array.transpose(), metric="cosine"))
+
+        model_euc_dists[i, :, :] = euc_distances
+        model_cos_dists[i, :, :] = cos_distances
+
+        try:
+            euc_dist_t = maxact_h5f.create_array(model_maxstim, "euc_dist", euc_distances, "euclidean distances between classes")
+            cos_dist_t = maxact_h5f.create_array(model_maxstim, "cos_dist", cos_distances, "cosine distances between classes")
+            act_array_t = maxact_h5f.create_array(model_maxstim, "max_acts", act_array, "maximum activations by class")
+        except tables.NodeError:
+            # We've already made these arrays
+            euc_dist_t = model_maxstim.euc_dist
+            cos_dist_t = model_maxstim.cos_dist
+            act_array_t = model_maxstim.max_acts
+            euc_dist_t[:,:] = euc_distances
+            cos_dist_t[:,:] = cos_distances
+            act_array_t[:,:] - act_array
+        model_maxstim._v_attrs.class_labels = stim_classes
+        euc_dist_t.flush()
+        cos_dist_t.flush()
+        act_array_t.flush()
+
+    # After all models run, average, var, std for distances
+    model_mean_euc = np.mean(model_euc_dists, axis=0)
+    model_var_euc  = np.var(model_euc_dists, axis=0)
+    model_std_euc  = np.std(model_euc_dists, axis=0)
+    model_mean_cos = np.mean(model_cos_dists, axis=0)
+    model_var_cos  = np.var(model_cos_dists, axis=0)
+    model_std_cos  = np.std(model_cos_dists, axis=0)
+    try:
+        euc_t   = maxact_h5f.create_array("/", "model_euc", model_euc_dists, "euclidean distances across models")
+        cos_t   = maxact_h5f.create_array("/", "model_cos", model_cos_dists, "euclidean distances across models")
+        mmeuc_t = maxact_h5f.create_array("/", "model_mean_euc", model_mean_euc, "euclidean distances across models")
+        mveuc_t = maxact_h5f.create_array("/", "model_var_euc", model_var_euc, "variance in euclidean distances across models")
+        mseuc_t = maxact_h5f.create_array("/", "model_std_euc", model_std_euc, "std of euclidean distances across models")
+        mmcos_t = maxact_h5f.create_array("/", "model_mean_cos", model_mean_cos, "cosine distances across models")
+        mvcos_t = maxact_h5f.create_array("/", "model_var_cos", model_var_cos, "variance in cosine distances across models")
+        mscos_t = maxact_h5f.create_array("/", "model_std_cos", model_std_cos, "std of cosine distances across models")
+    except tables.NodeError:
+        # We've already made these arrays
+        euc_t   = maxact_h5f.root.model_euc
+        cos_t   = maxact_h5f.root.model_cos
+        mmeuc_t = maxact_h5f.root.model_mean_euc
+        mveuc_t = maxact_h5f.root.model_var_euc
+        mseuc_t = maxact_h5f.root.model_std_euc
+        mmcos_t = maxact_h5f.root.model_mean_cos
+        mvcos_t = maxact_h5f.root.model_var_cos
+        mscos_t = maxact_h5f.root.model_std_cos
+        euc_t[:,:,:] = model_euc_dists
+        cos_t[:,:,:] = model_cos_dists
+        mmeuc_t[:,:] = model_mean_euc
+        mveuc_t[:,:] = model_var_euc
+        mseuc_t[:,:] = model_std_euc
+        mmcos_t[:,:] = model_mean_cos
+        mvcos_t[:,:] = model_var_cos
+        mscos_t[:,:] = model_std_cos
+
+    euc_t.flush()
+    cos_t.flush()
+    mmeuc_t.flush()
+    mveuc_t.flush()
+    mseuc_t.flush()
+    mmcos_t.flush()
+    mvcos_t.flush()
+    mscos_t.flush()
+
+    # Save mean vars, stds as attributes
+    maxact_h5f.root._v_attrs.var_euc = np.mean(model_var_euc)
+    maxact_h5f.root._v_attrs.std_euc = np.mean(model_std_euc)
+    maxact_h5f.root._v_attrs.var_cos = np.mean(model_var_cos)
+    maxact_h5f.root._v_attrs.std_cos = np.mean(model_std_cos)
+
+    maxact_h5f.close()
+
+
 def usage():
     print("Tools for analysis and visualization of trained networks")
     print("    -h, --help           : print this message")
     print("    -m, --mode <string>  : operating mode")
     print("        available modes:")
-    print("            \"maxact\": generate stim that maximally activate classes")
+    print("            \"maxact\"   : generate stim that maximally activate classes")
+    print("            \"distance\" : compute distances between stimulus classes")
     print("    -p, --path <string>  : path to load models from")
     print("    -n, --nstim <int>    : number of stimuli to generate per model per class")
     print("    -c, --classes <list> : list of strings for class labels")
@@ -305,6 +410,12 @@ if __name__ == "__main__":
 
         max_models_classes(model_dir, n_stim, stim_classes, img_shape, min_max)
 
+        # print("Maximum activations calculated, compute distances?")
+
+    elif mode == "distance":
+        print("Measuring distances between stimulus classes across models")
+
+        measure_distance(model_dir)
 
 
     # Sne weights on last layer
