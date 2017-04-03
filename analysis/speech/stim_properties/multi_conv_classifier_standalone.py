@@ -1,7 +1,9 @@
 
 # Import Libraries
 import sys
+import os
 import getopt
+import csv
 from time import strftime, gmtime
 
 from keras.models import Sequential
@@ -9,7 +11,7 @@ from keras.layers import Dense, Convolution2D, Flatten, MaxPooling2D, Dropout, E
 from keras.optimizers import RMSprop, Adam, Nadam
 from keras.regularizers import l2
 from keras.models import load_model, Model
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, RemoteMonitor
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, RemoteMonitor, Callback
 import keras.backend as K
 import numpy as np
 
@@ -79,11 +81,14 @@ OPTIMIZER_TYPE = "adam" # nadam, adam, or rmsprop
 NET_TYPE       = LOAD_PARAMS["net_type"]
 
 # Jitter audio so all don't start at same time
-N_JIT = 3
+N_JIT = 10
 JIT_AMT = 10 # In seconds or time bins
 
 # Number of models to train per run
-N_MODELS = 10
+N_MODELS = 20
+
+LOSS_FILE = "/home/lab/github/the_system/plots/plot_server/static/loss_logs.csv"
+ACC_FILE = "/home/lab/github/the_system/plots/plot_server/static/acc_logs.csv"
 
 
 ##########################################
@@ -124,9 +129,45 @@ learn_drop = ReduceLROnPlateau(monitor="loss",
                                verbose=1
                                )
 
+class log_attr(Callback):
+    def __init__(self, attr, csv_file):
+        self.attr = attr
+        self.csv_file = csv_file
+
+    def on_train_begin(self, logs={}):
+        if os.path.exists(self.csv_file):
+            os.remove(self.csv_file)
+
+        self.file = open(self.csv_file, 'wb')
+        self.writer = csv.writer(self.file, delimiter=',')
+        self.writer.writerow(["Epoch", self.attr])
+        self.file.close()
+
+        os.chmod(self.csv_file, 0o744)
+
+    def on_batch_end(self, epoch, logs={}):
+        val = logs.get(self.attr)
+
+        self.file = open(self.csv_file, 'a')
+        self.writer = csv.writer(self.file, delimiter=',')
+        self.writer.writerow([epoch, val])
+        self.file.close()
+
+        os.chmod(self.csv_file, 0o744)
+
+    def on_train_end(self, logs={}):
+        pass
+        #self.file.close()
+
+loss_logger = log_attr('loss', LOSS_FILE)
+acc_logger  = log_attr('acc', ACC_FILE)
+
+
+
+
 # checkpoint = ModelCheckpoint('/home/lab/Speech_Models/naked_conv_conscat_E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}', monitor="val_loss")
 
-remote = RemoteMonitor(root='http://localhost:9000')
+# remote = RemoteMonitor(root='http://localhost:9000')
 
 #s_thread = threading.Thread(target=api.server.serve_forever)
 #s_thread.start()
@@ -152,10 +193,10 @@ if not loaded:
         mnum = i+1
         print('Building model {}'.format(mnum))
 
-        prestring = '/home/lab/Speech_Models/naked_conv_conscat_M{}_'.format(mnum)
+        prestring = '/mnt/data/speech_models/conv_lin_conscat_M{}_'.format(mnum)
 
         checkpoint = ModelCheckpoint(
-            prestring+'E{epoch:02d}-L{loss:.2f}-conscat{acc:.2f}',
+            prestring+'E{epoch:02d}-L{loss:.3f}-conscat{acc:.2f}',
             monitor="loss")
 
         if OPTIMIZER_TYPE == "nadam":
@@ -274,12 +315,12 @@ if not loaded:
         # # DENSE LAYERS
         l_flat     = Flatten()(l_pool_3)
 
-        #l_dense_1  = Dense(N_CONV_FILTERS,
-        #                   init="he_normal",
-        #                   W_regularizer=l2(L2_WEIGHT))(l_flat)
-        #l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
-        #l_dact_1   = ELU()(l_dnorm_1)
-        #l_ddrop_1  = Dropout(0.5)(l_dact_1)
+        l_dense_1  = Dense(N_CONV_FILTERS*2,
+                           init="he_normal",
+                           W_regularizer=l2(L2_WEIGHT),
+                           activation="linear")(l_flat)
+        l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
+        l_ddrop_1  = Dropout(0.35)(l_dnorm_1)
 
         # l_dense_2  = Dense(N_CONV_FILTERS,
         #                    init="he_normal",
@@ -318,7 +359,7 @@ if not loaded:
         l_out_cons  = Dense(10,activation='sigmoid',
                             init="he_normal",
                             name="cons_spk",
-                            W_regularizer=l2(L2_WEIGHT))(l_flat)
+                            W_regularizer=l2(L2_WEIGHT))(l_ddrop_1)
         # l_out_speak = Dense(5,activation='sigmoid',
         #                     init="he_normal",
         #                     name="speak",
@@ -345,6 +386,6 @@ if not loaded:
         X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
         conscat = concat_cons_speak(cons_train, speak_train)
             #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
-        model.fit(X_train, conscat, batch_size=10, nb_epoch=60,callbacks=[learn_drop,checkpoint,remote])
+        model.fit(X_train, conscat, batch_size=10, nb_epoch=60,callbacks=[learn_drop,checkpoint, loss_logger, acc_logger])
 
 

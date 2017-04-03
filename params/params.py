@@ -76,6 +76,6 @@ class Learn_params(object):
     N_MODELS = 5
 
     # location of models when loading
-    MODEL_DIR = "/home/lab/Speech_Models/naked_conscat"
-    N_STIM = 3
+    MODEL_DIR = "/mnt/data/speech_models/lin_conscat"
+    N_STIM = 5
     CLASSES = ['1g','2g','3g','4g','5g','1b','2b','3b','4b','5b']

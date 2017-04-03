@@ -7,12 +7,14 @@ sys.path.append("/home/lab/github/the_system")
 
 from time import strftime, gmtime
 from keras.models import load_model
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE, MDS
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
 import tables
 from collections import OrderedDict as odict
 from tqdm import trange, tqdm
+
+import matplotlib.pyplot as plt
 
 from keras import backend as K
 
@@ -25,6 +27,34 @@ from params import Learn_params
 # plt.figtext(a[0,0], a[0,1], classes[0])
 # for i in range(len(classes)):
 #     ax.text(a[i,0],a[i,1], classes[i])
+# class_labels = ['1b', '1g', '2b', '2g', '3b', '3g', '4b', '4g', '5b', '5g']
+# #sne = TSNE(n_components=2, learning_rate=100, metric="precomputed")
+# mds = MDS(n_components=2, metric=False, n_init=10, dissimilarity="precomputed")
+# model_vals = [v for k, v in h5f.root._v_children.items() if k not in ["model_var_euc", "model_var_cos", "model_euc", "model_mean_euc", "model_mean_cos", "model_std_cos", "model_std_euc", "model_cos",  "cos_dist", "euc_dist", "max_acts"]]
+# i = 0
+# for a in model_vals:
+#     i += 1
+#     ax = plt.subplot(3,5,i)
+#     dist_arr = a._v_children['cos_dist'].read()
+#     sne_pos = mds.fit_transform(dist_arr)
+#     x = sne_pos[:,0]
+#     y = sne_pos[:,1]
+#     s = class_labels
+#
+#     ax.plot(x, y, "o")
+#     ax.set_title(a._v_name)
+#     text = [ax.text(*item) for item in zip(x, y, s)]
+#
+# plt.show()
+#
+# mean_cos_array = h5f.root._v_children['model_mean_cos'].read()
+# fig, ax = plt.subplots()
+# mds_mean_pos = mds.fit_transform(mean_cos_array)
+# x = mds_mean_pos[:,0]
+# y = mds_mean_pos[:,1]
+# ax.plot(x, y, "o")
+# text = [ax.text(*item) for item in zip(x, y, s)]
+# plt.show()
 
 
 #######################################
@@ -146,8 +176,8 @@ def generate_class_act(model, classind, img_shape, min_max, min_acc=0.995):
     t.close()
 
     # rescale to orig scale
-    rs_factor = min_max[1] / np.max(input_img_data)
-    input_img_data = input_img_data * rs_factor
+    #rs_factor = min_max[1] / np.max(input_img_data)
+    #input_img_data = input_img_data * rs_factor
 
     preds = model.predict(input_img_data)
     return preds, input_img_data
@@ -171,32 +201,64 @@ def max_models_classes(model_dir, n_stim, class_labels, img_shape, min_max):
     # Load models
     models, model_fs = load_models(model_dir)
 
-    ## Dataframe to store
-    filename = model_dir+"/class_max_{}.h5".format(strftime("%y%m%d-%H%M",gmtime()))
-    h5f = tables.open_file(filename, mode="w", title = "Max class of classifiers")
+    # Check if we have already started generating stim or if we have to make a new file
+    try:
+        existing_h5 = [f for f in os.listdir(model_dir) if "class_max" in f][-1]
+        h5fname = os.path.join(model_dir, existing_h5)
+        h5f = tables.open_file(h5fname, mode="r+")
+        print("Loaded most recent maxact h5: {}".format(existing_h5))
+    except IndexError:
+        h5fname = model_dir + "/class_max_{}.h5".format(strftime("%y%m%d-%H%M", gmtime()))
+        print("Making new h5 file at: {}".format(h5fname))
+        h5f = tables.open_file(h5fname, mode="w", title="Max class of classifiers")
+
 
     print("-------------------")
     print("Generating Stimuli")
+    print("-------------------")
+
     # Iterate over models...
     for j in trange(len(models), desc="Models", leave=True, position=0):
         modelname = model_fs[j].split('/')[-1]
-        group = h5f.create_group("/", modelname, "Max stim for model")
+        if modelname not in h5f.root._v_children.keys():
+            group = h5f.create_group("/", modelname, "Max stim for model")
+        else:
+            group = h5f.root._v_children[modelname]
 
         # and classes
         for i in trange(len(class_labels), desc="Classes", leave=True, position=1):
-            stimclass = h5f.create_group(group, class_labels[i], "Max stim for class {}".format(class_labels[i]))
+            if class_labels[i] not in group._v_children.keys():
+                stimclass = h5f.create_group(group, class_labels[i], "Max stim for class {}".format(class_labels[i]))
+            else:
+                stimclass = group._v_children[class_labels[i]]
 
-            # to generate n stim
-            for k in trange(n_stim, desc="Stimuli", leave=True, position=2):
-                # print("model: {}, class: {}, iter: {}".format(str(j), classes[i], str(k)), end="\r")
-                preds, img = generate_class_act(models[j], i, img_shape, min_max)
-                img_t = h5f.create_array(stimclass, class_labels[i]+"_"+str(k)+"_maxstim", img, "MaxStim")
-                preds_t = h5f.create_array(stimclass, class_labels[i]+"_"+str(k)+"_preds", preds, "Preds")
-                img_t.flush()
-                preds_t.flush()
+            # Check how many stim we already have generated
+            n_existing = len([s for s in stimclass._v_children.keys() if "maxstim" in s])
+
+            if n_existing == n_stim:
+                # Keep this here so the nested progressbars work
+                for k in trange(n_stim, desc="Stimuli", leave=True, position=2):
+                    continue
+            elif n_existing > 0:
+                for k in trange(n_existing, n_stim, desc="Stimuli", leave=True, position=2):
+                    preds, img = generate_class_act(models[j], i, img_shape, min_max)
+                    img_t = h5f.create_array(stimclass, class_labels[i]+"_"+str(k)+"_maxstim", img, "MaxStim")
+                    preds_t = h5f.create_array(stimclass, class_labels[i]+"_"+str(k)+"_preds", preds, "Preds")
+                    img_t.flush()
+                    preds_t.flush()
+            elif n_existing == 0:
+                for k in trange(n_stim, desc="Stimuli", leave=True, position=2):
+                    preds, img = generate_class_act(models[j], i, img_shape, min_max)
+                    img_t = h5f.create_array(stimclass, class_labels[i]+"_"+str(k)+"_maxstim", img, "MaxStim")
+                    preds_t = h5f.create_array(stimclass, class_labels[i]+"_"+str(k)+"_preds", preds, "Preds")
+                    img_t.flush()
+                    preds_t.flush()
+
+
+
     h5f.close()
 
-    print("Max stim saved to {}".format(filename))
+    print("Max stim saved to {}".format(h5fname))
 
 #######################################
 # Distance from activations for prototypes
@@ -214,6 +276,7 @@ def measure_distance(model_dir):
     n_classes = models[0].layers_by_depth[0][0].output._keras_shape[1]
     model_euc_dists = np.ndarray(shape=(len(models), n_classes, n_classes), dtype=np.float)
     model_cos_dists = np.ndarray(shape=(len(models), n_classes, n_classes), dtype=np.float)
+    model_mah_dists = np.ndarray(shape=(len(models), n_classes, n_classes), dtype=np.float)
 
     ## Iterate over models, stim classes, stim and get activations
     for i in trange(len(models), desc="Models", leave=True, position=0):
@@ -224,9 +287,10 @@ def measure_distance(model_dir):
         top_activation = K.function([model.layers[0].input, K.learning_phase()],
                                     [model.layers_by_depth[0][0].input])
 
-        #h5 group for model
-        model_maxstim = maxact_h5f.root._v_children.values()[i]
-        stim_classes = sorted(model_maxstim._v_children)
+        # h5 group for model
+        # we're sure modelnames has the same order as models b/c the list is ordered when sent to load_models
+        model_maxstim = maxact_h5f.root._v_children[modelnames[i]]
+        stim_classes = sorted([k for k in model_maxstim._v_children.keys() if k not in ["cos_dist", "euc_dist", "max_acts"]])
 
         # Numpy array to hold activations before distance calculation
         in_size = model.layers_by_depth[0][0].input._keras_shape[1]
@@ -267,11 +331,13 @@ def measure_distance(model_dir):
             act_array[:,j] = mean_activation
 
         # after getting activations from all classes, compute distances and save act_array
-        euc_distances = nonzero_norm(squareform(pdist(act_array.transpose())), [0,1])
+        euc_distances = squareform(pdist(act_array.transpose(), metric="seuclidean"))
         cos_distances = squareform(pdist(act_array.transpose(), metric="cosine"))
+        mah_distances = squareform(pdist(act_array.transpose(), metric="mahalanobis"))
 
         model_euc_dists[i, :, :] = euc_distances
         model_cos_dists[i, :, :] = cos_distances
+        model_mah_dists[i, :, :] = mah_distances
 
         try:
             euc_dist_t = maxact_h5f.create_array(model_maxstim, "euc_dist", euc_distances, "euclidean distances between classes")
@@ -285,10 +351,17 @@ def measure_distance(model_dir):
             euc_dist_t[:,:] = euc_distances
             cos_dist_t[:,:] = cos_distances
             act_array_t[:,:] - act_array
+        try:
+            mah_dist_t = maxact_h5f.create_array(model_maxstim, "mah_dist", mah_distances, "euclidean distances between classes")
+        except:
+            mah_dist_t = model_maxstim.mah_dist
+            mah_dist_t[:,:] = mah_distances
         model_maxstim._v_attrs.class_labels = stim_classes
         euc_dist_t.flush()
         cos_dist_t.flush()
+        mah_dist_t.flush()
         act_array_t.flush()
+
 
     # After all models run, average, var, std for distances
     model_mean_euc = np.mean(model_euc_dists, axis=0)
@@ -297,6 +370,9 @@ def measure_distance(model_dir):
     model_mean_cos = np.mean(model_cos_dists, axis=0)
     model_var_cos  = np.var(model_cos_dists, axis=0)
     model_std_cos  = np.std(model_cos_dists, axis=0)
+    model_mean_mah = np.mean(model_mah_dists, axis=0)
+    model_var_mah  = np.var(model_mah_dists, axis=0)
+    model_std_mah  = np.std(model_mah_dists, axis=0)
     try:
         euc_t   = maxact_h5f.create_array("/", "model_euc", model_euc_dists, "euclidean distances across models")
         cos_t   = maxact_h5f.create_array("/", "model_cos", model_cos_dists, "euclidean distances across models")
@@ -324,6 +400,17 @@ def measure_distance(model_dir):
         mmcos_t[:,:] = model_mean_cos
         mvcos_t[:,:] = model_var_cos
         mscos_t[:,:] = model_std_cos
+    try:
+        mmmah_t = maxact_h5f.create_array("/", "model_mean_euc", model_mean_mah, "euclidean distances across models")
+        mvmah_t = maxact_h5f.create_array("/", "model_var_euc", model_var_mah, "variance in euclidean distances across models")
+        msmah_t = maxact_h5f.create_array("/", "model_std_euc", model_std_mah, "std of euclidean distances across models")
+    except:
+        mmmah_t = maxact_h5f.root.model_mean_mah
+        mvmah_t = maxact_h5f.root.model_var_mah
+        msmah_t = maxact_h5f.root.model_std_mah
+        mmmah_t[:,:] = model_mean_mah
+        mvmah_t[:,:] = model_var_mah
+        msmah_t[:,:] = model_std_mah
 
     euc_t.flush()
     cos_t.flush()
@@ -333,12 +420,17 @@ def measure_distance(model_dir):
     mmcos_t.flush()
     mvcos_t.flush()
     mscos_t.flush()
+    mmmah_t.flush()
+    mvmah_t.flush()
+    msmah_t.flush()
 
     # Save mean vars, stds as attributes
     maxact_h5f.root._v_attrs.var_euc = np.mean(model_var_euc)
     maxact_h5f.root._v_attrs.std_euc = np.mean(model_std_euc)
     maxact_h5f.root._v_attrs.var_cos = np.mean(model_var_cos)
     maxact_h5f.root._v_attrs.std_cos = np.mean(model_std_cos)
+    maxact_h5f.root._v_attrs.var_mah = np.mean(model_var_mah)
+    maxact_h5f.root._v_attrs.std_mah = np.mean(model_std_mah)
 
     maxact_h5f.close()
 
@@ -391,8 +483,10 @@ if __name__ == "__main__":
             stim_classes = arg
             print("Stim classes set to {}".format(arg))
 
-    if not mode:
-        RuntimeError("mode is unset! pass an argument to -m, use -h for help")
+    try:
+        mode
+    except NameError:
+        NameError("mode is unset! pass an argument to -m, use -h for help")
 
     if mode == "maxact":
         print("Loading initial phoneme iterators")

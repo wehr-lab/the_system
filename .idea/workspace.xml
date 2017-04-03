@@ -5,6 +5,7 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py" afterPath="$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/analysis/speech/stim_properties/net_visualizer.py" afterPath="$PROJECT_DIR$/analysis/speech/stim_properties/net_visualizer.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/params/params.py" afterPath="$PROJECT_DIR$/params/params.py" />
     </list>
     <ignored path="the_system.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,20 +29,18 @@
         <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/learning_utils.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="176">
-              <caret line="11" column="26" lean-forward="true" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
+              <caret line="11" column="26" lean-forward="false" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="multi_conv_classifier_standalone.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="multi_conv_classifier_standalone.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1650">
-              <caret line="347" column="61" lean-forward="true" selection-start-line="347" selection-start-column="61" selection-end-line="347" selection-end-column="61" />
-              <folding>
-                <element signature="e#20#30#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="16">
+              <caret line="109" column="14" lean-forward="false" selection-start-line="109" selection-start-column="14" selection-end-line="109" selection-end-column="14" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -49,8 +48,8 @@
       <file leaf-file-name="params.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/params/params.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1248">
-              <caret line="78" column="16" lean-forward="false" selection-start-line="78" selection-start-column="16" selection-end-line="78" selection-end-column="55" />
+            <state relative-caret-position="800">
+              <caret line="50" column="73" lean-forward="false" selection-start-line="50" selection-start-column="73" selection-end-line="50" selection-end-column="73" />
               <folding />
             </state>
           </provider>
@@ -66,14 +65,24 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="net_visualizer.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="net_visualizer.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/net_visualizer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-4704">
-              <caret line="32" column="33" lean-forward="true" selection-start-line="32" selection-start-column="33" selection-end-line="32" selection-end-column="33" />
+            <state relative-caret-position="8112">
+              <caret line="511" column="35" lean-forward="false" selection-start-line="511" selection-start-column="35" selection-end-line="511" selection-end-column="35" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="node.py" pinned="false" current-in-tab="false">
+        <entry file="file:///usr/local/lib/python2.7/dist-packages/tables/node.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="3984">
+              <caret line="261" column="39" lean-forward="false" selection-start-line="261" selection-start-column="39" selection-end-line="261" selection-end-column="39" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -82,7 +91,7 @@
         <entry file="file://$PROJECT_DIR$/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="80">
-              <caret line="5" column="12" lean-forward="true" selection-start-line="5" selection-start-column="12" selection-end-line="5" selection-end-column="12" />
+              <caret line="5" column="12" lean-forward="false" selection-start-line="5" selection-start-column="12" selection-end-line="5" selection-end-column="12" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -105,16 +114,6 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="1056">
               <caret line="71" column="35" lean-forward="false" selection-start-line="71" selection-start-column="35" selection-end-line="71" selection-end-column="35" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/analysis/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -145,6 +144,7 @@
       <find>startswith</find>
       <find>warning</find>
       <find>sys</find>
+      <find>class_acts</find>
     </findStrings>
     <replaceStrings>
       <replace>'he_gaussian'</replace>
@@ -174,9 +174,9 @@
         <option value="$PROJECT_DIR$/analysis/speech/stim_properties/api.py" />
         <option value="$PROJECT_DIR$/analysis/speech/stim_properties/templates/test.html" />
         <option value="$PROJECT_DIR$/analysis/speech/stim_properties/default_params.py" />
-        <option value="$PROJECT_DIR$/params/params.py" />
         <option value="$PROJECT_DIR$/__init__.py" />
         <option value="$PROJECT_DIR$/params/__init__.py" />
+        <option value="$PROJECT_DIR$/params/params.py" />
         <option value="$PROJECT_DIR$/analysis/speech/stim_properties/net_visualizer.py" />
         <option value="$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py" />
       </list>
@@ -185,8 +185,8 @@
   <component name="ProjectFrameBounds">
     <option name="x" value="1920" />
     <option name="y" value="24" />
-    <option name="width" value="1080" />
-    <option name="height" value="1896" />
+    <option name="width" value="1920" />
+    <option name="height" value="1056" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -203,6 +203,8 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scratches" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -299,8 +301,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scratches" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -529,7 +529,14 @@
       <option name="project" value="LOCAL" />
       <updated>1489724784198</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Added distance measurement in an organized way to visualizer">
+      <created>1489798897795</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1489798897795</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TodoView">
@@ -542,26 +549,26 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1920" y="24" width="1080" height="1896" extended-state="6" />
+    <frame x="1920" y="24" width="1920" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.20462963" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.14791666" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30115426" sideWeight="0.16702586" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3294893" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="true" weight="0.34211972" sideWeight="0.83297414" order="7" side_tool="false" content_ui="tabs" x="995" y="52" width="928" height="1028" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="true" weight="0.34211972" sideWeight="0.83297414" order="7" side_tool="false" content_ui="tabs" x="65" y="24" width="1855" height="1056" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3286445" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39897698" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3294893" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39897698" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -583,7 +590,8 @@
     <MESSAGE value="Max Class net visualization tools" />
     <MESSAGE value="Get distance metrics from max class stim, run a naked (no intermediate dense) model." />
     <MESSAGE value="Cleaned up net_visualizer to actually be used" />
-    <option name="LAST_COMMIT_MESSAGE" value="Cleaned up net_visualizer to actually be used" />
+    <MESSAGE value="Added distance measurement in an organized way to visualizer" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added distance measurement in an organized way to visualizer" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -603,23 +611,10 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/file_handling/csv_to_hdf5.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/Phoneme_Classifier.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#205#244#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -634,9 +629,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1320">
           <caret line="100" column="27" lean-forward="true" selection-start-line="100" selection-start-column="27" selection-end-line="100" selection-end-column="27" />
-          <folding>
-            <element signature="e#0#32#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -644,9 +636,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="20" column="0" lean-forward="true" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -654,9 +643,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2010">
           <caret line="149" column="0" lean-forward="false" selection-start-line="149" selection-start-column="0" selection-end-line="149" selection-end-column="0" />
-          <folding>
-            <element signature="e#205#244#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -671,9 +657,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
           <caret line="10" column="7" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="18" selection-end-column="65" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -681,9 +664,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2235">
           <caret line="149" column="0" lean-forward="false" selection-start-line="149" selection-start-column="0" selection-end-line="149" selection-end-column="0" />
-          <folding>
-            <element signature="e#205#244#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -698,9 +678,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
           <caret line="10" column="7" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="18" selection-end-column="65" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -708,9 +685,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2235">
           <caret line="149" column="0" lean-forward="false" selection-start-line="149" selection-start-column="0" selection-end-line="149" selection-end-column="0" />
-          <folding>
-            <element signature="e#205#244#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -726,9 +700,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
           <caret line="10" column="7" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="18" selection-end-column="65" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -736,9 +707,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2235">
           <caret line="149" column="0" lean-forward="false" selection-start-line="149" selection-start-column="0" selection-end-line="149" selection-end-column="0" />
-          <folding>
-            <element signature="e#205#244#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -747,9 +715,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
           <caret line="10" column="7" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="18" selection-end-column="65" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -757,9 +722,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#205#244#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -768,9 +730,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="112">
           <caret line="10" column="7" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="18" selection-end-column="65" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -809,9 +768,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="16">
           <caret line="1" column="0" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="18" selection-end-column="65" />
-          <folding>
-            <element signature="e#44#53#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -819,9 +775,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="273">
           <caret line="20" column="0" lean-forward="true" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#26#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -829,7 +782,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="7952">
           <caret line="513" column="0" lean-forward="false" selection-start-line="513" selection-start-column="0" selection-end-line="513" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -837,7 +789,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="16">
           <caret line="10" column="49" lean-forward="false" selection-start-line="10" selection-start-column="49" selection-end-line="10" selection-end-column="49" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -845,9 +796,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="434">
           <caret line="55" column="2" lean-forward="false" selection-start-line="55" selection-start-column="2" selection-end-line="55" selection-end-column="2" />
-          <folding>
-            <element signature="e#0#32#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -855,9 +803,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="257">
           <caret line="65" column="0" lean-forward="false" selection-start-line="65" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
-          <folding>
-            <element signature="e#205#244#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -865,7 +810,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -896,23 +840,16 @@
     <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/learning_utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="176">
-          <caret line="11" column="26" lean-forward="true" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
+          <caret line="11" column="26" lean-forward="false" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/params.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="128">
-          <caret line="8" column="34" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="60" selection-end-column="12" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/params.py" />
     <entry file="file://$PROJECT_DIR$/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="80">
-          <caret line="5" column="12" lean-forward="true" selection-start-line="5" selection-start-column="12" selection-end-line="5" selection-end-column="12" />
+          <caret line="5" column="12" lean-forward="false" selection-start-line="5" selection-start-column="12" selection-end-line="5" selection-end-column="12" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
@@ -927,31 +864,37 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/params/params.py">
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/tables/node.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1248">
-          <caret line="78" column="16" lean-forward="false" selection-start-line="78" selection-start-column="16" selection-end-line="78" selection-end-column="55" />
+        <state relative-caret-position="3984">
+          <caret line="261" column="39" lean-forward="false" selection-start-line="261" selection-start-column="39" selection-end-line="261" selection-end-column="39" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py">
+    <entry file="file://$PROJECT_DIR$/params/params.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1650">
-          <caret line="347" column="61" lean-forward="true" selection-start-line="347" selection-start-column="61" selection-end-line="347" selection-end-column="61" />
-          <folding>
-            <element signature="e#20#30#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="800">
+          <caret line="50" column="73" lean-forward="false" selection-start-line="50" selection-start-column="73" selection-end-line="50" selection-end-column="73" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/net_visualizer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-4704">
-          <caret line="32" column="33" lean-forward="true" selection-start-line="32" selection-start-column="33" selection-end-line="32" selection-end-column="33" />
+        <state relative-caret-position="8112">
+          <caret line="511" column="35" lean-forward="false" selection-start-line="511" selection-start-column="35" selection-end-line="511" selection-end-column="35" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="16">
+          <caret line="109" column="14" lean-forward="false" selection-start-line="109" selection-start-column="14" selection-end-line="109" selection-end-column="14" />
+          <folding />
         </state>
       </provider>
     </entry>
