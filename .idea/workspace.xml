@@ -4,8 +4,6 @@
     <list default="true" id="7ecb9429-d2fe-4962-8218-67ef92f4c057" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py" afterPath="$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/analysis/speech/stim_properties/net_visualizer.py" afterPath="$PROJECT_DIR$/analysis/speech/stim_properties/net_visualizer.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/params/params.py" afterPath="$PROJECT_DIR$/params/params.py" />
     </list>
     <ignored path="the_system.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,9 +26,11 @@
       <file leaf-file-name="learning_utils.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/learning_utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="176">
-              <caret line="11" column="26" lean-forward="false" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
-              <folding />
+            <state relative-caret-position="320">
+              <caret line="92" column="8" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="355" selection-end-column="0" />
+              <folding>
+                <element signature="e#20#59#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -38,9 +38,11 @@
       <file leaf-file-name="multi_conv_classifier_standalone.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="16">
-              <caret line="109" column="14" lean-forward="false" selection-start-line="109" selection-start-column="14" selection-end-line="109" selection-end-column="14" />
-              <folding />
+            <state relative-caret-position="282">
+              <caret line="366" column="0" lean-forward="true" selection-start-line="366" selection-start-column="0" selection-end-line="366" selection-end-column="0" />
+              <folding>
+                <element signature="e#20#30#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -145,9 +147,15 @@
       <find>warning</find>
       <find>sys</find>
       <find>class_acts</find>
+      <find>ELU</find>
+      <find>tion(axis=3</find>
+      <find>init=&quot;he_normal&quot;</find>
     </findStrings>
     <replaceStrings>
       <replace>'he_gaussian'</replace>
+      <replace>PReLU</replace>
+      <replace>tion(axis=3, scale=False</replace>
+      <replace>kernel_initializer='he_normal'</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -536,7 +544,14 @@
       <option name="project" value="LOCAL" />
       <updated>1489798897795</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Commit for transferring computers">
+      <created>1491256750584</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1491256750584</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TodoView">
@@ -555,20 +570,20 @@
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.14791666" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30115426" sideWeight="0.16702586" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3294893" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="true" weight="0.34211972" sideWeight="0.83297414" order="7" side_tool="false" content_ui="tabs" x="65" y="24" width="1855" height="1056" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="true" weight="0.34211972" sideWeight="0.83297414" order="7" side_tool="false" content_ui="tabs" x="65" y="52" width="1855" height="1028" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3286445" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39897698" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3294893" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39897698" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -591,7 +606,8 @@
     <MESSAGE value="Get distance metrics from max class stim, run a naked (no intermediate dense) model." />
     <MESSAGE value="Cleaned up net_visualizer to actually be used" />
     <MESSAGE value="Added distance measurement in an organized way to visualizer" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added distance measurement in an organized way to visualizer" />
+    <MESSAGE value="Commit for transferring computers" />
+    <option name="LAST_COMMIT_MESSAGE" value="Commit for transferring computers" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -837,14 +853,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/learning_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="11" column="26" lean-forward="false" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/params.py" />
     <entry file="file://$PROJECT_DIR$/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -890,11 +898,23 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/learning_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="320">
+          <caret line="92" column="8" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="355" selection-end-column="0" />
+          <folding>
+            <element signature="e#20#59#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/analysis/speech/stim_properties/multi_conv_classifier_standalone.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="16">
-          <caret line="109" column="14" lean-forward="false" selection-start-line="109" selection-start-column="14" selection-end-line="109" selection-end-column="14" />
-          <folding />
+        <state relative-caret-position="282">
+          <caret line="366" column="0" lean-forward="true" selection-start-line="366" selection-start-column="0" selection-end-line="366" selection-end-column="0" />
+          <folding>
+            <element signature="e#20#30#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
