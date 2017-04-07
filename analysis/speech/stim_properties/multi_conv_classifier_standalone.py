@@ -27,8 +27,8 @@ import threading
 
 
 PHOVECT_COLS = ['consonant', 'speaker', 'vowel', 'token']
-# NAMES = ['Jonny', 'Ira', 'Anna', 'Dani', 'Theresa']
-NAMES = ['Jonny', 'Ira']
+NAMES = ['Jonny', 'Ira', 'Anna', 'Dani', 'Theresa']
+# NAMES = ['Jonny', 'Ira']
 CONS = ['g', 'b']
 VOWS = ['I', 'o', 'a', 'ae', 'e', 'u']
 PHONEME_DIR = '/home/lab/github/SVN-ComboPack/ratrixSounds/phonemes/'
@@ -203,21 +203,21 @@ if not loaded:
         mnum = i+1
         print('Building model {}'.format(mnum))
 
-        if i < (N_MODELS/2):
-            # first condition
-            NAMES = ['Jonny', 'Ira']
-            phovect_idx, phovect_xdi, file_idx, file_loc = make_phoneme_iterators(NAMES, CONS, VOWS, MAPBACK, PHONEME_DIR)
-            X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
-            prestring = '/mnt/data/speech_models/conv_simplin_cond1_M{}_'.format(mnum)
+        # if i < (N_MODELS/2):
+        #     # first condition
+        #     NAMES = ['Jonny', 'Ira']
+        #     phovect_idx, phovect_xdi, file_idx, file_loc = make_phoneme_iterators(NAMES, CONS, VOWS, MAPBACK, PHONEME_DIR)
+        #     X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
+        #     prestring = '/mnt/data/speech_models/conv_simplin_cond1_M{}_'.format(mnum)
+        #
+        # if i >= (N_MODELS/2):
+        #     # switch to other condition
+        #     NAMES = ['Dani', 'Theresa']
+        #     phovect_idx, phovect_xdi, file_idx, file_loc = make_phoneme_iterators(NAMES, CONS, VOWS, MAPBACK, PHONEME_DIR)
+        #     X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
+        #     prestring = '/mnt/data/speech_models/conv_simplin_cond2_M{}_'.format(mnum)
 
-        if i >= (N_MODELS/2):
-            # switch to other condition
-            NAMES = ['Dani', 'Theresa']
-            phovect_idx, phovect_xdi, file_idx, file_loc = make_phoneme_iterators(NAMES, CONS, VOWS, MAPBACK, PHONEME_DIR)
-            X_train,cons_train,speak_train,vow_train = spectrogram_for_training(file_loc, MEL_PARAMS,phovect_idx,N_JIT,JIT_AMT)
-            prestring = '/mnt/data/speech_models/conv_simplin_cond2_M{}_'.format(mnum)
-
-
+        prestring = '/mnt/data/speech_models/conv_simplin_conscat_M{}_'.format(mnum)
 
 
         checkpoint = ModelCheckpoint(
@@ -254,16 +254,15 @@ if not loaded:
         l_act_1_2  = PReLU()(l_norm_1_2)
         l_drop_1_2 = Dropout(0.4)(l_act_1_2)
 
-        # l_conv_1_3 = Conv2D(N_CONV_FILTERS, FILT_LEN,
-        #                     strides=(2,2),
-        #                     kernel_initializer='he_normal',
-        #                     padding='same',
-        #                     kernel_regularizer=l2(L2_WEIGHT))(l_drop_1_2)
-        # l_norm_1_3 = BatchNormalization(axis=3, scale=False)(l_conv_1_3)
-        # l_act_1_3  = PReLU()(l_norm_1_3)
-        # l_drop_1_3 = Dropout(0.5)(l_act_1_3)
+        l_conv_1_3 = Conv2D(N_CONV_FILTERS, FILT_LEN,
+                            kernel_initializer='he_normal',
+                            padding='same',
+                            kernel_regularizer=l2(L2_WEIGHT))(l_drop_1_2)
+        l_norm_1_3 = BatchNormalization(axis=3, scale=False)(l_conv_1_3)
+        l_act_1_3  = PReLU()(l_norm_1_3)
+        l_drop_1_3 = Dropout(0.4)(l_act_1_3)
 
-        l_pool_1   = MaxPooling2D(pool_size=(2,2))(l_drop_1_2)
+        l_pool_1   = MaxPooling2D(pool_size=(2,2))(l_drop_1_3)
 
         # CONV LEVEL 2
         l_conv_2_1 = Conv2D(N_CONV_FILTERS, FILT_LEN,
@@ -282,16 +281,15 @@ if not loaded:
         l_act_2_2  = PReLU()(l_norm_2_2)
         l_drop_2_2 = Dropout(0.4)(l_act_2_2)
 
-        # l_conv_2_3 = Conv2D(N_CONV_FILTERS, FILT_LEN,
-        #                     strides=(2,2),
-        #                     kernel_initializer='he_normal',
-        #                     padding='same',
-        #                     kernel_regularizer=l2(L2_WEIGHT))(l_drop_2_2)
-        # l_norm_2_3 = BatchNormalization(axis=3, scale=False)(l_conv_2_3)
-        # l_act_2_3  = PReLU()(l_norm_2_3)
-        # l_drop_2_3 = Dropout(0.5)(l_act_2_3)
+        l_conv_2_3 = Conv2D(N_CONV_FILTERS, FILT_LEN,
+                            kernel_initializer='he_normal',
+                            padding='same',
+                            kernel_regularizer=l2(L2_WEIGHT))(l_drop_2_2)
+        l_norm_2_3 = BatchNormalization(axis=3, scale=False)(l_conv_2_3)
+        l_act_2_3  = PReLU()(l_norm_2_3)
+        l_drop_2_3 = Dropout(0.4)(l_act_2_3)
 
-        l_pool_2   = MaxPooling2D(pool_size=(2,2))(l_drop_2_2)
+        l_pool_2   = MaxPooling2D(pool_size=(2,2))(l_drop_2_3)
 
         # CONV LEVEL 3
         l_conv_3_1 = Conv2D(N_CONV_FILTERS, FILT_LEN,
@@ -310,31 +308,30 @@ if not loaded:
         l_act_3_2  = PReLU()(l_norm_3_2)
         l_drop_3_2 = Dropout(0.4)(l_act_3_2)
 
-        # l_conv_3_3 = Conv2D(N_CONV_FILTERS, FILT_LEN,
-        #                     strides=(2,2),
-        #                     kernel_initializer='he_normal',
-        #                     padding='same',
-        #                     kernel_regularizer=l2(L2_WEIGHT))(l_drop_3_2)
-        # l_norm_3_3 = BatchNormalization(axis=3, scale=False)(l_conv_3_3)
-        # l_act_3_3  = PReLU()(l_norm_3_3)
-        # l_drop_3_3 = Dropout(0.5)(l_act_3_3)
+        l_conv_3_3 = Conv2D(N_CONV_FILTERS, FILT_LEN,
+                            kernel_initializer='he_normal',
+                            padding='same',
+                            kernel_regularizer=l2(L2_WEIGHT))(l_drop_3_2)
+        l_norm_3_3 = BatchNormalization(axis=3, scale=False)(l_conv_3_3)
+        l_act_3_3  = PReLU()(l_norm_3_3)
+        l_drop_3_3 = Dropout(0.4)(l_act_3_3)
 
-        l_pool_3   = MaxPooling2D(pool_size=(2,2))(l_drop_3_2)
+        l_pool_3   = MaxPooling2D(pool_size=(2,2))(l_drop_3_3)
 
         # # DENSE LAYERS
         l_flat     = Flatten()(l_pool_3)
 
-        # l_dense_1  = Dense(N_CONV_FILTERS*4,
-        #                    kernel_initializer='he_normal',
-        #                    kernel_regularizer=l2(L2_WEIGHT))(l_flat)
-        # l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
-        # l_dact_1 = ELU()(l_dnorm_1)
-        # l_ddrop_1  = Dropout(0.5)(l_dact_1)
+        l_dense_1  = Dense(N_CONV_FILTERS*4,
+                           kernel_initializer='he_normal',
+                           kernel_regularizer=l2(L2_WEIGHT))(l_flat)
+        l_dnorm_1 = BatchNormalization(axis=-1)(l_dense_1)
+        l_dact_1 = ELU()(l_dnorm_1)
+        l_ddrop_1  = Dropout(0.4)(l_dact_1)
 
         l_dense_2  = Dense(N_CONV_FILTERS*2,
                            kernel_initializer='he_normal',
                            activation="linear",
-                           kernel_regularizer=l2(L2_WEIGHT))(l_flat)
+                           kernel_regularizer=l2(L2_WEIGHT))(l_ddrop_1)
         l_dnorm_2 = BatchNormalization(axis=-1)(l_dense_2)
         l_ddrop_2  = Dropout(0.4)(l_dnorm_2)
         #
@@ -365,7 +362,7 @@ if not loaded:
         #                     kernel_regularizer=l2(L2_WEIGHT))(l_merge)
         # l_drop_2    = Dropout(0.5)(l_dense_2)
 
-        l_out_cons  = Dense(2,activation='sigmoid',
+        l_out_cons  = Dense(10,activation='sigmoid',
                             kernel_initializer='he_normal',
                             name="cons_spk",
                             kernel_regularizer=l2(L2_WEIGHT))(l_ddrop_2)
@@ -391,8 +388,10 @@ if not loaded:
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
 
-
-            #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
-        model.fit(X_train, cons_train, batch_size=30, epochs=60,callbacks=[learn_drop,checkpoint, loss_logger, acc_logger])
+        X_train, cons_train, speak_train, vow_train = spectrogram_for_training(file_loc, MEL_PARAMS, phovect_idx, N_JIT,
+                                                                               JIT_AMT)
+        conscat = concat_cons_speak(cons_train, speak_train)
+        #model.fit(X_train, [cons_train, speak_train, vow_train], batch_size=5, nb_epoch=1)
+        model.fit(X_train, conscat, batch_size=30, epochs=65,callbacks=[learn_drop,checkpoint, loss_logger, acc_logger])
 
 

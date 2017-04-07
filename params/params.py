@@ -69,8 +69,8 @@ class Learn_params(object):
     NET_TYPE       = LOAD_PARAMS["net_type"]
 
     # Jitter audio so all don't start at same time
-    N_JIT = 3
-    JIT_AMT = 10 # In seconds or time bins
+    N_JIT = 20
+    JIT_AMT = 19 # In seconds or time bins
 
     # Number of models to train per run
     N_MODELS = 5

@@ -137,6 +137,141 @@ def deprocess_image(x):
 #######################################
 # Max activations of classes
 
+def bridge_class(model, h5f, group, maxact, target_ind, min_acc=0.995):
+    # Given an existing maximally activating stimulus, transit to another stimulus class
+    # And save the grads, trajectory, and predictions along the way.
+
+    model_in = model.layers[0].input
+    model_out = model.layers[-1].output
+
+    # Loss is the activation of the target class
+    loss = model_out[0, target_ind]
+
+    # Get gradients, we don't normalize because we just want the real shit
+    grads = K.gradients(loss, model_in)[0]
+
+    # Function that returns loss & predictions given the input picture
+    iterate = K.function([model_in, K.learning_phase()], [loss, grads])
+
+    # Make arrays to store history
+    # We should have gotten a pytables file object and a group object
+    # These arrays will get huge so we want to dump them to disk rather than hold them in memory
+    # We use an EArray, an extendable array to be able to append
+    n_classes = model_out._keras_shape[1]
+    shape_tup = (0, np.squeeze(maxact).shape[0], np.squeeze(maxact).shape[1])
+
+    f64atom = tables.Float64Atom()
+    pred_table = h5f.create_earray(group, 'predictions', atom=f64atom, shape=(0, n_classes))
+    grad_table = h5f.create_earray(group, 'grads', atom=f64atom, shape=shape_tup)
+    stim_table = h5f.create_earray(group, 'stims', atom=f64atom, shape=shape_tup)
+
+    # run gradient ascent
+    # Scale factor for stim adjustment
+    step = 10000
+
+    t = tqdm(total=min_acc, desc="Activation", position=2)
+    last_loss = 0
+    while True:
+        loss_value, grads_value = iterate([maxact, 0])
+        preds = model.predict(maxact)
+
+        # Save values
+        # We have to squirrel with the data a bit to get it into a friendly format
+        # rollaxis puts the singleton dimension in position 0,
+        # and we grab all of maxact except its final singleton dimension.
+        pred_table.append(preds)
+        grad_table.append(np.rollaxis(grads_value, 2, 0))
+        stim_table.append(maxact[:,:,:,0])
+
+        # Update stimulus
+        maxact += grads_value * step
+
+        if loss_value >= min_acc:
+            break
+        else:
+            t.update(loss_value-last_loss)
+            last_loss = loss_value
+    t.close()
+
+    # We don't return shit because we already wrote it to disk
+
+def bridge_classes(model_dir, stim_classes, start_class, target_class):
+    # Given an h5file of maximum class activations, bridge one stim class to another and measure distance along the way
+    # We should get a class index to start from
+
+    maxact_f   = [os.path.join(model_dir, f) for f in os.listdir(model_dir) if "class_max" in f]
+    maxact_h5f = tables.open_file(maxact_f[0], mode="r")
+
+    # Because the structure will be quite different, we make a new file
+    bridges_f = os.path.join(model_dir, "bridges.h5")
+    bridges_h5f = tables.open_file(bridges_f, mode="w")
+
+    # Load models as a dict so we can relate them to filenames and their h5 name
+    # We load only the models that we have maxacts for
+    print("Loading models from {}".format(model_dir))
+    model_fs = [f for f in os.listdir(model_dir) if not ".h5" in f]
+    model_fs = [f for f in model_fs if f in maxact_h5f.root._v_children.keys()]
+
+    models = dict()
+    for f in tqdm(model_fs):
+        models[f] = load_model(os.path.join(model_dir, f))
+    print("{} models loaded".format(len(models)))
+
+    # Get class labels as strings for h5f manipulation
+    start_str = stim_classes[start_class]
+    target_str = stim_classes[target_class]
+
+    # Iterate through the models, making our bridges
+
+    print("-------------------")
+    print("Generating Bridges from {} to {}".format(start_str, target_str))
+    print("-------------------")
+
+    for mname, model in tqdm(models.items(), desc="Models", leave=True, position=0):
+
+        if mname not in bridges_h5f.root._v_children.keys():
+            group = bridges_h5f.create_group("/", mname)
+        else:
+            group = bridges_h5f.root._v_children[mname]
+
+        # Get the group for our starting class
+        model_group = maxact_h5f.root._v_children[mname]
+        start_group = model_group._v_children[start_str]
+
+        # Get the names of the maxstim classes
+        maxstim_names = sorted([n for n in start_group._v_children.keys() if "maxstim" in n])
+
+        # Iterate through the maxact stim in the class
+        for i in trange(len(maxstim_names), desc="Maxstim", leave=True, position=1):
+            # Make a group for this model and trajectory
+            groupname = start_str+"-"+target_str+"-"+i.split("_")[1]
+
+            if groupname not in group._v_children.keys():
+                stim_group = bridges_h5f.create_group(group, groupname, "{} Trajectory from {} to {}".format(i.split("_")[1], start_str, target_str))
+            else:
+                continue # we already made this one
+
+            maxact = start_group._v_children[i].read()
+
+            bridge_class(model, bridges_h5f, stim_group, maxact, target_class, min_acc=0.995)
+
+    maxact_h5f.close()
+    bridges_h5f.close()
+
+    print("Bridges saved to {}".format(bridges_f))
+
+
+
+
+
+
+
+
+
+
+
+
+
 def generate_class_act(model, classind, img_shape, min_max, min_acc=0.995):
     # Generate a "stimulus" that maximizes the activation of one of the numbered class
 
@@ -159,7 +294,15 @@ def generate_class_act(model, classind, img_shape, min_max, min_acc=0.995):
 
     # we start from a gray image with some noise
     input_img_data = np.random.uniform(low=min_max[0], high=min_max[1],
-                                       size=(1, img_shape[0], img_shape[1], 1))
+                                       size=(1, model_in._keras_shape[1], model_in._keras_shape[2], 1))
+
+    # find a good seed image so that this doesn't take forever
+    loss_value, grads_value = iterate([input_img_data, 0])
+    while loss_value <= 0.00001:
+        input_img_data = np.random.uniform(low=min_max[0], high=min_max[1],
+                                           size=(1, model_in._keras_shape[1], model_in._keras_shape[2], 1))
+        loss_value, grads_value = iterate([input_img_data, 0])
+
     # run gradient ascent
     step = 10000
 
